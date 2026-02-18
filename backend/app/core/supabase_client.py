@@ -24,7 +24,13 @@ class SupabaseService:
             # Fallback seguro para desenvolvimento (NÃO USAR EM PRODUÇÃO)
             self.fernet = None
         else:
-            self.fernet = Fernet(key.encode())
+            try:
+                # Fernet exige uma chave de 32 bytes em base64.
+                # Se o usuário colocou uma string comum, isso vai dar erro.
+                self.fernet = Fernet(key.encode())
+            except Exception as e:
+                print(f"CRITICAL: MASTER_ENCRYPTION_KEY inválida (deve ser 32 bytes base64): {e}")
+                self.fernet = None
 
     def encrypt_data(self, data: str) -> str:
         """Criptografa uma string usando a chave mestra."""
