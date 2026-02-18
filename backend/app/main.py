@@ -62,12 +62,29 @@ app.include_router(sefaz.router, prefix="/api/sefaz", tags=["SEFAZ"])
 app.include_router(admin.router, prefix="/api") # Prefixo já incluído no router (/admin)
 app.include_router(users.router, prefix="/api") # Prefixo já incluído (/users)
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {
         "status": "active", 
         "system": "END Monitor Contábil", 
         "version": "1.0.0"
+    }
+
+@app.get("/api/debug-env")
+async def debug_env():
+    """Rota segura para verificar se as chaves estão presentes na Vercel."""
+    keys_to_check = [
+        "VITE_SUPABASE_URL", "SUPABASE_URL",
+        "VITE_SUPABASE_ANON_KEY", "SUPABASE_KEY",
+        "VITE_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY",
+        "VITE_MASTER_ENCRYPTION_KEY", "MASTER_ENCRYPTION_KEY",
+        "VITE_ALLOWED_ORIGINS", "ALLOWED_ORIGINS"
+    ]
+    env_status = {k: "DEFINIDA" if os.environ.get(k) else "AUSENTE" for k in keys_to_check}
+    return {
+        "status": "online",
+        "env_check": env_status,
+        "tip": "Se VITE_SUPABASE_URL for o endereço do seu site, o frontend vai dar erro 404 ao tentar falar com o banco."
     }
 
 if __name__ == "__main__":
