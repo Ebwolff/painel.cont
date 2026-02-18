@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>END Monitor Contábil - Apresentação Estratégica</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-color: #111111;
+            --text-color: #ffffff;
+            --accent-color: #f59e0b; /* Amber-500 */
+            --secondary-text: #a3a3a3;
+            --card-bg: #1a1a1a;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 2rem;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        p {
+            color: var(--secondary-text);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        strong {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--secondary-text);
+        }
+
+        li::before {
+            content: "•";
+            color: var(--accent-color);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .highlight-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .quote {
+            font-size: 1.5rem;
+            font-style: italic;
+            text-align: center;
+            color: var(--text-color);
+            margin: 3rem 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--accent-color);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 5rem;
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            opacity: 0.7;
+        }
+
+        @media print {
+            body {
+                background-color: #fff; /* Optional: print white if user prefers, but requested dark mode implies style */
+                color: #000;
+            }
+            /* Override for dark mode print - forcing dark background for PDF export usually requires specific browser settings or keeping it structured. 
+               For a "Presentation PDF", usually we want the visual style. 
+               Let's enforce the dark theme styles even in print media if 'Background Graphics' is checked. */
+            
+            :root {
+                --bg-color: #111111 !important;
+                --text-color: #ffffff !important;
+                --card-bg: #1a1a1a !important;
+                --secondary-text: #cccccc !important;
+            }
+            
+            .container {
+                width: 100%;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>END Monitor Contábil</h1>
+            <div class="subtitle">Apresentação Estratégica</div>
+        </header>
+
+        <section>
+            <p style="text-align: center; font-size: 1.25rem; margin-top: -2rem; color: #fff;">
+                ENFRENTE A REFORMA TRIBUTÁRIA COM CLAREZA EXECUTIVA.
+            </p>
+        </section>
+
+        <section>
+            <h2>1. O Problema: O "Ano do Teste" (2026)</h2>
+            <p>Em 2026, empresas brasileiras entram em um cenário de transição tributária crítica. Conviverão dois sistemas: o antigo e o novo (IBS/CBS a 1%).</p>
+            
+            <div class="highlight-box">
+                <p><strong>A dor do contador e do empresário:</strong></p>
+                <ul>
+                    <li><strong>Incerteza:</strong> A nota fiscal foi emitida com o destaque correto de 0,9% CBS e 0,1% IBS?</li>
+                    <li><strong>Prejuízo Silencioso:</strong> Cada erro significa perda imediata de crédito tributário.</li>
+                    <li><strong>Cegueira Operacional:</strong> Descobrir o erro na apuração mensal é tarde demais. O caixa já foi afetado.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>2. A Solução: END Monitor Contábil</h2>
+            <p>Não buscamos ser mais um software de gestão. Somos o <strong>fim da incerteza</strong> na transição tributária.</p>
+            <p>Um agente inteligente focado em visão estratégica e ação imediata, monitorando o fluxo de notas fiscais (NF-e/NFS-e) para garantir conformidade total e proteção de caixa.</p>
+        </section>
+
+        <div class="quote">
+            "Você não descobre problemas tarde demais."
+        </div>
+
+        <section>
+            <h2>3. Como Funciona: O Agente em Ação</h2>
+            <p>O sistema opera sob a lógica de <strong>Agentes Inteligentes Orientados à Ação (END Agents)</strong>:</p>
+            <ul>
+                <li><strong>Ingestão Inteligente:</strong> Coleta automática de XMLs via integração ou upload.</li>
+                <li><strong>Validação Aguda:</strong> Cruzamento determinístico de valores + Agentes de IA que analisam regras de transição da Receita em tempo real.</li>
+                <li><strong>Alerta Executivo:</strong> Se houver divergência, o sistema não gera um "relatório". Ele dispara uma <strong>ação</strong>.</li>
+            </ul>
+            <p style="margin-left: 1.5rem; font-style: italic; color: var(--accent-color);">
+                Exemplo: Alerta via WhatsApp para o contador: "Nota 442 da Empresa X — CBS incorreto. Valor esperado: R$ 90,00. Valor em nota: R$ 0,00. Corrija agora."
+            </p>
+        </section>
+
+        <section>
+            <h2>4. Visão Estratégica: O Dashboard</h2>
+            <p>Desenhado para líderes que precisam enxergar e decidir rápido.</p>
+            <ul>
+                <li><strong>Termômetro de Risco:</strong> Visão consolidada por CNPJ. Verde (Seguro), Amarelo (Atenção), Vermelho (Risco de Perda de Crédito).</li>
+                <li><strong>KPI de Impacto:</strong> "Créditos Recuperados/Protegidos" em tempo real.</li>
+                <li><strong>Zero Ruído:</strong> Sem BI complexo. Apenas o que importa: Onde está travando agora?</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>5. Diferencial Competitivo</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Característica</th>
+                        <th>Software Tradicional</th>
+                        <th>END Monitor Contábil</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Foco</strong></td>
+                        <td>Processamento de dados</td>
+                        <td><strong>Visão e Decisão</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Abordagem</strong></td>
+                        <td>Reativa (fim do mês)</td>
+                        <td><strong>Preditiva (tempo real)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Interface</strong></td>
+                        <td>Tabelas infinitas</td>
+                        <td><strong>Alertas e Termômetros</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>IA</strong></td>
+                        <td>Chatbot genérico</td>
+                        <td><strong>Agentes de conformidade</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>6. Proposta de Valor</h2>
+            <div class="highlight-box">
+                <p><strong>Para o Escritório de Contabilidade:</strong></p>
+                <ul>
+                    <li>Elimine o retrabalho na apuração.</li>
+                    <li>Entregue valor estratégico real para o cliente (proteção de dinheiro).</li>
+                    <li>Reduza a responsabilidade civil por erros de cálculo na transição.</li>
+                </ul>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Para o Dono do Negócio:</strong></p>
+                <ul>
+                    <li>Durma tranquilo sabendo que seu crédito tributário está protegido.</li>
+                    <li>Visão clara da conformidade da empresa em um clique.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>7. Próximos Passos (Cloud-Native)</h2>
+            <ul>
+                <li><strong>Plataforma Online:</strong> Acesso via navegador.</li>
+                <li><strong>Conexão Realtime:</strong> Baseado em Supabase para velocidade e segurança.</li>
+                <li><strong>Escalabilidade:</strong> Pronto para monitorar desde 1 até 1.000 CNPJs em um único painel.</li>
+            </ul>
+        </section>
+
+        <div class="footer">
+            <p><strong>END Technology</strong></p>
+            <p>Encerramos a incerteza na gestão. Transformamos gargalos em ação.</p>
+        </div>
+    </div>
+
+</body>
+</html>
