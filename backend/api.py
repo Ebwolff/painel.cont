@@ -24,25 +24,31 @@ def create_emergency_app(error_msg: str, trace: str):
         env_status = {k: "DEFINIDA" if os.environ.get(k) else "AUSENTE" for k in keys_to_check}
         
         return JSONResponse(
-            status_code=200, # Mudamos para 200 para forçar o navegador a mostrar o JSON em vez do erro genérico
+            status_code=200,
             content={
+                "ERROR_MESSAGE": error_msg,
+                "ERROR_TRACE": trace,
                 "status": "emergency_diagnostic_mode",
                 "request_path": f"/api/{path_name}",
-                "error": error_msg,
-                "trace": trace,
+                "python_version": sys.version,
                 "env_check": env_status,
                 "sys_path": sys.path,
                 "current_dir": os.getcwd(),
-                "tip": "O Backend está ONLINE, mas falhou ao carregar o aplicativo principal. Veja o 'error' e 'trace' acima."
+                "tip": "Copie o ERROR_MESSAGE acima para o chat."
             }
         )
     return app
 
 # 2. Tentativa de Importação com Diagnóstico Passo a Passo
 try:
-    print(f"DEBUG: Tentando importar app de {current_dir}")
-    from app.main import app
-    print("DEBUG: App importado com sucesso!")
+    print(f"DEBUG: Tentando importar app de {current_dir}...")
+    try:
+        from app.main import app
+        print("DEBUG: App importado via 'app.main'!")
+    except ImportError:
+        print("DEBUG: Falhou via 'app.main', tentando 'backend.app.main'...")
+        from backend.app.main import app
+        print("DEBUG: App importado via 'backend.app.main'!")
 except Exception as e:
     error_trace = traceback.format_exc()
     print(f"CRITICAL ERROR durante importação: {e}\n{error_trace}")
