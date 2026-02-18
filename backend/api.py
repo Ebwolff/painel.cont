@@ -2,20 +2,23 @@ import sys
 import os
 import traceback
 
-# Garantir que a pasta local seja detectada
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.append(current_dir)
+# Diagnóstico de Ambiente
+print(f"DEBUG: Python Version: {sys.version}")
+print(f"DEBUG: Current Dir: {os.getcwd()}")
+print(f"DEBUG: System Path: {sys.path}")
 
 try:
-    print(f"DEBUG: Iniciando API de {current_dir}")
-    print(f"DEBUG: Python Path: {sys.path}")
     from app.main import app
+    print("DEBUG: App imported successfully")
 except Exception as e:
-    print(f"ERROR: Falha ao importar 'app': {e}")
+    print(f"CRITICAL: Failed to import app: {e}")
     print(traceback.format_exc())
-    raise e
+    # Cria uma aplicação dummy para evitar crash de invocação e mostrar o erro na rota
+    from fastapi import FastAPI
+    app = FastAPI()
+    @app.get("/api/dashboard/current-company")
+    @app.get("/api/health")
+    def error_route():
+        return {"status": "error", "detail": str(e), "trace": traceback.format_exc()}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Variável 'app' deve estar no escopo global para o handler da Vercel
