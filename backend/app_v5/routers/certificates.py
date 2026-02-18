@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
-from app_v5.v5.core.supabase_client import SupabaseService
-from app_v5.v5.core.security import get_current_token, get_current_user
+from app_v5.core.supabase_client import SupabaseService
+from app_v5.core.security import get_current_token, get_current_user
 import base64
 import os
 

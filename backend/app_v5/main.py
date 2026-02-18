@@ -49,7 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app_v5.v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug
+from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug
 
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(debug.router, prefix="/api/dashboard", tags=["Dashboard"])
@@ -73,7 +73,7 @@ async def health_check():
 @app.get("/api/debug-env")
 async def debug_env():
     """Rota segura para verificar se as chaves estão presentes na Vercel e testar o banco."""
-    from app_v5.v5.core.supabase_client import SupabaseService
+    from app_v5.core.supabase_client import SupabaseService
     
     keys_to_check = [
         "VITE_SUPABASE_URL", "SUPABASE_URL",
