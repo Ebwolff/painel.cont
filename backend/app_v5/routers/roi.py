@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-from app.core.supabase_client import SupabaseService
-from app.core.security import get_current_token, get_current_user
+from app_v5.core.supabase_client import SupabaseService
+from app_v5.core.security import get_current_token, get_current_user
 from typing import Dict, List
 from datetime import datetime, timedelta
 

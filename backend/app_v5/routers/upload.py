@@ -1,9 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from typing import Dict, Any
-from app.services.xml_parser import XMLParserService
-from app.services.tax_validator import TaxValidatorService
-from app.core.supabase_client import SupabaseService
-from app.core.security import get_current_token
+from app_v5.services.xml_parser import XMLParserService
+from app_v5.services.tax_validator import TaxValidatorService
+from app_v5.core.supabase_client import SupabaseService
+from app_v5.core.security import get_current_token
 import logging
 import os
 import traceback

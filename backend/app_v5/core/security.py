@@ -19,7 +19,7 @@ async def get_current_token(credentials: HTTPAuthorizationCredentials = Depends(
         )
     return credentials.credentials
 
-from app.core.supabase_client import SupabaseService
+from app_v5.v5.core.supabase_client import SupabaseService
 
 async def get_current_user(token: str = Depends(get_current_token)):
     """

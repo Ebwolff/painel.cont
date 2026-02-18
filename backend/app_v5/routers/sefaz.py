@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
-from app.services.sefaz_sync import SefazSyncService
-from app.core.supabase_client import SupabaseService
-from app.core.security import get_current_token
+from app_v5.services.sefaz_sync import SefazSyncService
+from app_v5.core.supabase_client import SupabaseService
+from app_v5.core.security import get_current_token
 
 router = APIRouter()
 sync_service = SefazSyncService()

@@ -49,7 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug
+from app_v5.v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug
 
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(debug.router, prefix="/api/dashboard", tags=["Dashboard"])
@@ -73,7 +73,7 @@ async def health_check():
 @app.get("/api/debug-env")
 async def debug_env():
     """Rota segura para verificar se as chaves estão presentes na Vercel e testar o banco."""
-    from app.core.supabase_client import SupabaseService
+    from app_v5.v5.core.supabase_client import SupabaseService
     
     keys_to_check = [
         "VITE_SUPABASE_URL", "SUPABASE_URL",
@@ -112,6 +112,7 @@ async def debug_env():
         "status": "online",
         "env_check": env_status,
         "db_test": {
+            "version": "v5-bust",
             "status": db_status,
             "counts": db_counts,
             "error": db_error
@@ -123,4 +124,4 @@ if __name__ == "__main__":
     import uvicorn
     # Em desenvolvimento usamos reload, em produção a Vercel/PaaS ignora esse bloco.
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("app_v5.main:app", host="0.0.0.0", port=port, reload=False)

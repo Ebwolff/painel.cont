@@ -34,7 +34,8 @@ def create_emergency_app(error_msg: str, trace: str):
                 "env_check": env_status,
                 "sys_path": sys.path,
                 "current_dir": os.getcwd(),
-                "tip": "Copie o ERROR_MESSAGE acima para o chat."
+                "VERSION": "v5-cache-bust",
+                "tip": "Se você caiu aqui em modo de emergência, verifique se a pasta app_v5 existe no deploy."
             }
         )
     return app
@@ -43,12 +44,12 @@ def create_emergency_app(error_msg: str, trace: str):
 try:
     print(f"DEBUG: Tentando importar app de {current_dir}...")
     try:
-        from app.main import app
-        print("DEBUG: App importado via 'app.main'!")
+        from app_v5.main import app
+        print("DEBUG: App importado via 'app_v5.main'!")
     except ImportError:
-        print("DEBUG: Falhou via 'app.main', tentando 'backend.app.main'...")
-        from backend.app.main import app
-        print("DEBUG: App importado via 'backend.app.main'!")
+        print("DEBUG: Falhou via 'app_v5.main', tentando 'backend.app_v5.main'...")
+        from backend.app_v5.main import app
+        print("DEBUG: App importado via 'backend.app_v5.main'!")
 except Exception as e:
     error_trace = traceback.format_exc()
     print(f"CRITICAL ERROR durante importação: {e}\n{error_trace}")

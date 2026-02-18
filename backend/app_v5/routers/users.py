@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.core.security import get_current_user
-from app.core.supabase_client import SupabaseService
+from app_v5.core.security import get_current_user
+from app_v5.core.supabase_client import SupabaseService
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/users", tags=["Users"])
