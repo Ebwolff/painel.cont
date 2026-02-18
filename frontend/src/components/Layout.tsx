@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UploadCloud, AlertTriangle, Building2, LogOut, Menu, TrendingUp, User } from 'lucide-react';
+import { LayoutDashboard, UploadCloud, AlertTriangle, Building2, LogOut, Menu, TrendingUp, User, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Layout() {
     const location = useLocation();
     const { isAdmin, profile, signOut, hasPermission } = useAuth();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Fechar menu ao mudar de rota
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [location.pathname]);
 
     const allNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/', permission: null },
@@ -23,17 +29,36 @@ export function Layout() {
     }
 
     return (
-        <div className="flex h-screen bg-end-bg text-end-text overflow-hidden">
+        <div className="flex h-screen bg-end-bg text-end-text overflow-hidden relative">
+            {/* Mobile Backdrop */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 bg-end-card border-r border-end-border hidden md:flex flex-col print:hidden">
-                <div className="p-6 border-b border-end-border">
-                    <h1 className="text-xl font-bold tracking-tight text-white">
-                        END <span className="text-end-accent">Monitor</span>
-                    </h1>
-                    <p className="text-xs text-end-text-sec mt-1">Conformidade Tributária 2026</p>
+            <aside className={cn(
+                "fixed inset-y-0 left-0 w-64 bg-end-card border-r border-end-border z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex flex-col print:hidden",
+                isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            )}>
+                <div className="p-6 border-b border-end-border flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold tracking-tight text-white">
+                            END <span className="text-end-accent">Monitor</span>
+                        </h1>
+                        <p className="text-xs text-end-text-sec mt-1">Conformidade Tributária 2026</p>
+                    </div>
+                    <button
+                        className="md:hidden p-1 text-end-text-sec hover:text-white"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1">
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         const Icon = item.icon;
@@ -71,15 +96,18 @@ export function Layout() {
             <div className="flex-1 flex flex-col min-w-0">
                 <header className="h-16 border-b border-end-border bg-end-bg/50 backdrop-blur-sm flex items-center justify-between px-6 z-10 print:hidden">
                     <div className="flex items-center gap-4">
-                        <button className="md:hidden p-1 text-end-text-sec hover:text-white">
+                        <button
+                            className="md:hidden p-1 text-end-text-sec hover:text-white"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
                             <Menu size={24} />
                         </button>
-                        <h2 className="text-lg font-semibold text-white">
+                        <h2 className="text-lg font-semibold text-white truncate">
                             {navItems.find(i => i.path === location.pathname)?.label || 'Bem-vindo'}
                         </h2>
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-end-accent flex items-center justify-center text-black font-bold text-xs uppercase">
+                        <div className="h-8 w-8 rounded-full bg-end-accent flex items-center justify-center text-black font-bold text-xs uppercase shadow-lg shadow-end-accent/20">
                             {profile?.nome?.substring(0, 2) || profile?.email?.substring(0, 2) || '??'}
                         </div>
                         <span className="text-sm text-end-text-sec hidden sm:block">
@@ -88,7 +116,7 @@ export function Layout() {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-auto p-6 md:p-8 scroll-smooth print:p-0 print:overflow-visible">
+                <main className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth print:p-0 print:overflow-visible">
                     <div className="max-w-6xl mx-auto space-y-6 print:max-w-none">
                         <Outlet />
                     </div>
