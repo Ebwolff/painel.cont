@@ -3,7 +3,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "backend/app/main.py"
+            "destination": "backend/api.py"
         },
         {
             "source": "/(.*)",
@@ -19,7 +19,7 @@
             }
         },
         {
-            "src": "backend/app/main.py",
+            "src": "backend/api.py",
             "use": "@vercel/python"
         }
     ]
