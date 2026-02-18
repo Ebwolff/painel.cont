@@ -19,7 +19,7 @@ class SupabaseService:
 
     def _init_crypto(self):
         """Inicializa a chave de criptografia Fernet (AES-128 em modo CBC com HMAC-SHA256)."""
-        key = os.environ.get("MASTER_ENCRYPTION_KEY")
+        key = os.environ.get("VITE_MASTER_ENCRYPTION_KEY") or os.environ.get("MASTER_ENCRYPTION_KEY")
         if not key:
             # Fallback seguro para desenvolvimento (NÃO USAR EM PRODUÇÃO)
             self.fernet = None
@@ -110,6 +110,9 @@ class SupabaseService:
         """
         Insere a Nota Fiscal e seus Alertas no Supabase.
         """
+        # Preparar cliente ADMIN antecipadamente
+        client = self.get_service_client()
+
         # 1. Preparar dados da Nota
         nota_payload = {
             "tenant_id": tenant_id,
@@ -146,12 +149,9 @@ class SupabaseService:
                 pass
 
         # 2. Inserir Nota (retornando ID)
-        # Usamos o service_client para bypassar RLS em operações de backend
-        client = self.get_service_client()
         res = client.table("notas_fiscais").insert(nota_payload).execute()
         
         if not res.data:
-            logger.error(f"Erro Supabase: {res}")
             raise Exception(f"Falha ao inserir nota fiscal: {res}")
             
         nota_id = res.data[0]['id']

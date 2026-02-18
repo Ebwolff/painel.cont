@@ -24,21 +24,29 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS Configuration
 # Em produção, deve ser estrito.
 allowed_origins_env = os.getenv("VITE_ALLOWED_ORIGINS") or os.getenv("ALLOWED_ORIGINS") or ""
-origins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-]
-if allowed_origins_env:
-    origins.extend(allowed_origins_env.split(","))
+origins = []
+allow_all = False
 
+if allowed_origins_env == "*":
+    allow_all = True
+    origins = ["*"]
+elif allowed_origins_env:
+    origins = allowed_origins_env.split(",")
+else:
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+    ]
+
+# Nota: Se allow_origins for ["*"], allow_credentials não pode ser True.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"], # Limit methods
-    allow_headers=["Authorization", "Content-Type"], # Limit headers
+    allow_credentials=not allow_all, # Desabilita se for * para evitar erro de navegador
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 from app.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug
