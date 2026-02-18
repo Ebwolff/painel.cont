@@ -59,9 +59,9 @@ class SupabaseService:
             print(f"CRITICAL: Falha ao gravar log de auditoria: {e}")
 
     def _init_client(self):
-        url: str = os.environ.get("SUPABASE_URL")
-        key: str = os.environ.get("SUPABASE_KEY")
-        service_key: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        url: str = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+        key: str = os.environ.get("VITE_SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY")
+        service_key: str = os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
         
         if not url or not key:
             raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
@@ -94,8 +94,8 @@ class SupabaseService:
         if not access_token:
             return self.client
             
-        url: str = os.environ.get("SUPABASE_URL")
-        key: str = os.environ.get("SUPABASE_KEY")
+        url: str = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+        key: str = os.environ.get("VITE_SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY")
         
         # Para criar um cliente autenticado no SDK Python, passamos o token nos headers.
         # Isso ativa o context object auth.uid() e auth.jwt() no PostgreSQL.

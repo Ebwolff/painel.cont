@@ -23,7 +23,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS Configuration
 # Em produção, deve ser estrito.
-allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins_env = os.getenv("VITE_ALLOWED_ORIGINS") or os.getenv("ALLOWED_ORIGINS") or ""
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
