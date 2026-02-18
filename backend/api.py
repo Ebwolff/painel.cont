@@ -24,7 +24,7 @@ def create_emergency_app(error_msg: str, trace: str):
         env_status = {k: "DEFINIDA" if os.environ.get(k) else "AUSENTE" for k in keys_to_check}
         
         return JSONResponse(
-            status_code=500,
+            status_code=200, # Mudamos para 200 para forçar o navegador a mostrar o JSON em vez do erro genérico
             content={
                 "status": "emergency_diagnostic_mode",
                 "request_path": f"/api/{path_name}",
@@ -33,7 +33,7 @@ def create_emergency_app(error_msg: str, trace: str):
                 "env_check": env_status,
                 "sys_path": sys.path,
                 "current_dir": os.getcwd(),
-                "tip": "Se você caiu aqui, o backend falhou ao importar o app principal. Verifique orequirements.txt e as chaves acima."
+                "tip": "O Backend está ONLINE, mas falhou ao carregar o aplicativo principal. Veja o 'error' e 'trace' acima."
             }
         )
     return app
