@@ -72,7 +72,9 @@ async def health_check():
 
 @app.get("/api/debug-env")
 async def debug_env():
-    """Rota segura para verificar se as chaves estão presentes na Vercel."""
+    """Rota segura para verificar se as chaves estão presentes na Vercel e testar o banco."""
+    from app.core.supabase_client import SupabaseService
+    
     keys_to_check = [
         "VITE_SUPABASE_URL", "SUPABASE_URL",
         "VITE_SUPABASE_ANON_KEY", "SUPABASE_KEY",
@@ -81,10 +83,40 @@ async def debug_env():
         "VITE_ALLOWED_ORIGINS", "ALLOWED_ORIGINS"
     ]
     env_status = {k: "DEFINIDA" if os.environ.get(k) else "AUSENTE" for k in keys_to_check}
+    
+    db_status = "Não testado"
+    db_counts = {}
+    db_error = None
+    
+    try:
+        supabase = SupabaseService()
+        admin_client = supabase.get_service_client()
+        
+        # Teste 1: Contagem de Perfis
+        profiles_res = admin_client.table("profiles").select("id", count="exact").limit(1).execute()
+        db_counts["profiles"] = profiles_res.count
+        
+        # Teste 2: Contagem de Notas (opcional)
+        try:
+            notas_res = admin_client.table("notas_fiscais").select("id", count="exact").limit(1).execute()
+            db_counts["notas_fiscais"] = notas_res.count
+        except:
+            db_counts["notas_fiscais"] = "erro ou tabela ausente"
+            
+        db_status = "Conexão OK"
+    except Exception as e:
+        db_status = "Falha na Conexão"
+        db_error = str(e)
+        
     return {
         "status": "online",
         "env_check": env_status,
-        "tip": "Se VITE_SUPABASE_URL for o endereço do seu site, o frontend vai dar erro 404 ao tentar falar com o banco."
+        "db_test": {
+            "status": db_status,
+            "counts": db_counts,
+            "error": db_error
+        },
+        "tip": "Se db_test.status for 'Falha', verifique a URL e a SERVICE_ROLE_KEY."
     }
 
 if __name__ == "__main__":
