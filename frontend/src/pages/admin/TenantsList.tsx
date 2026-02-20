@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Search, Building2, MoreHorizontal, ShieldCheck, Trash2, Edit2, User } from 'lucide-react';
 import { api } from '../../services/api';
+import { cn } from '../../lib/utils';
 
 export function TenantsList() {
     const [tenants, setTenants] = useState<any[]>([]);
@@ -157,8 +158,14 @@ export function TenantsList() {
                                 </td>
                                 <td className="p-4 text-end-text-sec font-mono text-sm">{tenant.cnpj}</td>
                                 <td className="p-4">
-                                    <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${tenant.plano === 'enterprise' ? 'bg-purple-500/20 text-purple-400' : 'bg-green-500/20 text-green-400'}`}>
-                                        {tenant.plano}
+                                    <span className={cn(
+                                        "text-[10px] font-bold px-2 py-1 rounded uppercase",
+                                        tenant.plano === 'enterprise' ? 'bg-purple-500/20 text-purple-400' :
+                                            tenant.plano === 'pro' ? 'bg-blue-500/20 text-blue-400' :
+                                                'bg-green-500/20 text-green-400'
+                                    )}>
+                                        {tenant.plano === 'enterprise' ? 'Corporativo' :
+                                            tenant.plano === 'pro' ? 'Profissional' : 'Inicial'}
                                     </span>
                                 </td>
                                 <td className="p-4 text-end-text-sec text-sm">
@@ -239,9 +246,9 @@ export function TenantsList() {
                                     onChange={e => setNewTenant({ ...newTenant, plano: e.target.value })}
                                     className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none focus:border-end-accent"
                                 >
-                                    <option value="free">Gratuito (Trial)</option>
-                                    <option value="pro">Profissional</option>
-                                    <option value="enterprise">Enterprise</option>
+                                    <option value="starter">Monitor Inicial</option>
+                                    <option value="pro">Monitor Profissional</option>
+                                    <option value="enterprise">Inteligência Corporativa</option>
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-4">
@@ -286,9 +293,9 @@ export function TenantsList() {
                                     onChange={e => setEditingTenant({ ...editingTenant, plano: e.target.value })}
                                     className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none focus:border-end-accent"
                                 >
-                                    <option value="free">Gratuito (Trial)</option>
-                                    <option value="pro">Profissional</option>
-                                    <option value="enterprise">Enterprise</option>
+                                    <option value="starter">Monitor Inicial</option>
+                                    <option value="pro">Monitor Profissional</option>
+                                    <option value="enterprise">Inteligência Corporativa</option>
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-4">

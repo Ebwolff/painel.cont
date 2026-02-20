@@ -33,6 +33,35 @@ async def trigger_sync(
         print(f"Erro ao disparar sync: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/test-sync/{empresa_id}", summary="Executa sync mock síncrono para teste")
+async def test_sync(
+    empresa_id: str,
+    token: str = Depends(get_current_token)
+):
+    """
+    Executa a sincronização de forma síncrona (aguarda o fim) para validar o motor de regras.
+    """
+    try:
+        client = supabase_service.get_client_for_user(token)
+        
+        # Obter tenant_id
+        res = client.table("profiles").select("tenant_id").eq("id", client.auth.get_user().user.id).execute()
+        if not res.data:
+            raise HTTPException(status_code=403, detail="Perfil não encontrado.")
+            
+        tenant_id = res.data[0]['tenant_id']
+        
+        # Executa de forma síncrona para retornar o resultado no Response
+        result = await sync_service.sync_company_documents(empresa_id, tenant_id)
+        
+        return {
+            "message": "Sincronização de teste concluída.",
+            "result": result
+        }
+    except Exception as e:
+        print(f"Erro no test-sync: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/status/{empresa_id}")
 async def get_sync_status(empresa_id: str):
     # TODO: Implementar log de jobs de sincronização no banco

@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UploadCloud, AlertTriangle, Building2, LogOut, Menu, TrendingUp, User, X } from 'lucide-react';
+import {
+    LayoutDashboard, UploadCloud, AlertTriangle, Building2,
+    LogOut, Menu, TrendingUp, User, X, Lock, ShieldCheck, Star, Sparkles
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useFeatures } from '../hooks/useFeatures';
+import { api } from '../services/api';
 
 export function Layout() {
     const location = useLocation();
     const { isAdmin, profile, signOut, hasPermission } = useAuth();
+    const { hasFeature, tier, loading: loadingFeatures } = useFeatures();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const handlePlanChange = async (newPlan: string) => {
+        try {
+            await api.post(`/features/set-plan?plan=${newPlan}`, {});
+            window.location.reload(); // Recarregar para aplicar novas features
+        } catch (error) {
+            console.error("Failed to change plan", error);
+        }
+    };
 
     // Fechar menu ao mudar de rota
     useEffect(() => {
@@ -15,17 +30,17 @@ export function Layout() {
     }, [location.pathname]);
 
     const allNavItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/', permission: null },
-        { icon: TrendingUp, label: 'Relatório de Valor', path: '/valor', permission: 'can_view_roi' },
-        { icon: UploadCloud, label: 'Upload XML', path: '/upload', permission: 'can_upload_xml' },
-        { icon: AlertTriangle, label: 'Alertas', path: '/alertas', permission: 'can_resolve_alerts' },
-        { icon: Building2, label: 'Empresas', path: '/empresas', permission: 'can_manage_companies' },
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/', feature: null },
+        { icon: TrendingUp, label: 'Relatório de Valor', path: '/valor', feature: 'roi_summary' },
+        { icon: UploadCloud, label: 'Upload XML', path: '/upload', feature: 'upload_manual' },
+        { icon: AlertTriangle, label: 'Alertas', path: '/alertas', feature: 'basic_monitor' },
+        { icon: Building2, label: 'Empresas', path: '/empresas', feature: 'basic_monitor' },
     ];
 
-    const navItems = allNavItems.filter(item => !item.permission || hasPermission(item.permission));
+    const navItems = allNavItems;
 
     if (isAdmin) {
-        navItems.push({ icon: User, label: 'Equipe', path: '/users', permission: null });
+        navItems.push({ icon: User, label: 'Equipe', path: '/users', feature: null });
     }
 
     return (
@@ -62,24 +77,65 @@ export function Layout() {
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         const Icon = item.icon;
+                        const isLocked = item.feature && !hasFeature(item.feature);
 
                         return (
                             <Link
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                                    "flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-colors group",
                                     isActive
                                         ? "bg-end-accent/10 text-end-accent"
                                         : "text-end-text-sec hover:bg-white/5 hover:text-white"
                                 )}
                             >
-                                <Icon size={18} />
-                                {item.label}
+                                <div className="flex items-center gap-3">
+                                    <Icon size={18} />
+                                    {item.label}
+                                </div>
+                                {isLocked && <Lock size={12} className="text-end-accent/60 group-hover:text-end-accent animate-pulse" />}
                             </Link>
                         );
                     })}
                 </nav>
+
+                <div className="p-4 space-y-4">
+                    {/* Plan Indicator */}
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-end-text-sec uppercase tracking-widest">Plano Atual</span>
+                            {tier === 'enterprise' ? <Sparkles size={14} className="text-end-accent" /> :
+                                tier === 'pro' ? <Star size={14} className="text-blue-400" /> :
+                                    <ShieldCheck size={14} className="text-gray-400" />}
+                        </div>
+                        <p className="text-sm font-black text-white uppercase italic tracking-tighter">
+                            {tier === 'enterprise' ? 'Inteligência Corporativa' :
+                                tier === 'pro' ? 'Monitor Profissional' : 'Monitor Inicial'}
+                        </p>
+                    </div>
+
+                    {/* Demo Plan Switcher (Visible to Admins & Contadores for demo phase) */}
+                    {(isAdmin || profile?.role === 'contador') && (
+                        <div className="bg-end-accent/5 rounded-lg p-3 border border-end-accent/20">
+                            <p className="text-[9px] font-bold text-end-accent uppercase mb-2">Demo: Trocar Plano</p>
+                            <div className="grid grid-cols-3 gap-1">
+                                {['starter', 'pro', 'enterprise'].map(p => (
+                                    <button
+                                        key={p}
+                                        onClick={() => handlePlanChange(p)}
+                                        className={cn(
+                                            "text-[8px] font-bold py-1 rounded uppercase transition-all",
+                                            tier === p ? "bg-end-accent text-black" : "bg-white/5 text-end-text-sec hover:bg-white/10"
+                                        )}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 <div className="p-4 border-t border-end-border">
                     <button

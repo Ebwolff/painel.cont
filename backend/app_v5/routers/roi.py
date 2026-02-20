@@ -8,64 +8,51 @@ router = APIRouter()
 supabase_service = SupabaseService()
 
 @router.get("/strategic-intel", summary="Indicadores Estratégicos de BI")
-def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_current_user)):
+async def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_current_user)):
     """
-    Gera indicadores de alto nível para o BI do contador:
-    Respeita RLS. Se for Monitor, força o filtro pela empresa vinculada.
+    Gera indicadores de alto nível para o BI do contador.
     """
     try:
         user_id = user['id']
-
-        # Verificar Role e Empresa
+        token = user.get('access_token')
+        
+        # Obter cliente do usuário para respeitar RLS
+        user_client = supabase_service.get_client_for_user(token)
         admin_client = supabase_service.get_service_client()
+        
+        # Verificar Role e Empresa
         profile_res = admin_client.table("profiles").select("role, empresa_id, tenant_id").eq("id", user_id).single().execute()
         profile = profile_res.data or {}
         role = profile.get('role')
         linked_company = profile.get('empresa_id')
         tenant_id = profile.get('tenant_id')
         
-        print(f"DEBUG ROI INTEL: User={user_id}, Tenant={tenant_id}, Role={role}")
-        
-        # Se for Monitor, IGNORA o parametro empresa_id e usa o vinculado
         if role == 'monitor':
-            if not linked_company:
-                return {"indice_risco": 0, "percentual_inconsistencia": 0, "potencial_glosa": 0, "evolucao_exposicao": []}
             empresa_id = linked_company
 
-        # Usar user_client para buscar dados respeitando RLS
+        # 1. Buscar dados de notas
         query = user_client.table("notas_fiscais").select("status, valor_cbs, valor_ibs, created_at")
         if empresa_id:
             query = query.eq("empresa_id", empresa_id)
         
         res_total = query.execute()
+        res_data = res_total.data or []
         
-        total_notas = len(res_total.data) if res_total.data else 0
-        notas_irregulares = [n for n in res_total.data if n.get('status') == 'irregular']
-        total_irregulares = len(notas_irregulares)
+        total_notas = len(res_data)
+        total_irregulares = len([n for n in res_data if n.get('status') == 'irregular'])
 
-        # 1. Potencial de Glosa (Soma das diferenças nos alertas pendentes)
+        # 2. Potencial de Glosa
         query_alertas = user_client.table("alertas_conformidade").select("diferenca").eq("resolvido", False)
         if empresa_id:
             query_alertas = query_alertas.eq("empresa_id", empresa_id)
         res_alertas_glosa = query_alertas.execute()
         glosa = sum(item.get('diferenca', 0) or 0 for item in (res_alertas_glosa.data or []))
 
-        # Buscar risco score do tenant
-        try:
-            res_tenant = admin_client.table("tenants").select("risco_score").eq("id", tenant_id).execute()
-            risco_base = res_tenant.data[0].get('risco_score', 45) if res_tenant.data else 45
-        except Exception:
-            risco_base = 45
-
-        # 3. Evolução da Exposição (Últimos 6 meses)
-        data_semestre = (datetime.now() - timedelta(days=180)).isoformat()
-        # Reutilizar dados já buscados ou fazer nova query se precisar de mais histórico
-        res_evolucao_data = res_total.data or [] # Já temos todas as notas (RLS cuida do tenant)
-
+        # 3. Evolução da Exposição
         meses_pt = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
         evolucao_dict = {}
         
-        for nota in res_evolucao_data:
+        for nota in res_data:
             if nota.get('status') != 'irregular': continue
             try:
                 dt = datetime.fromisoformat(nota['created_at'].split('+')[0])
@@ -84,17 +71,13 @@ def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_current
             val = evolucao_dict.get(mid, 0)
             evolucao_final.append({"mes": label, "valor": val})
             
-            # Se for o mês atual e o anterior, calculamos a tendência
-            if i == 0: # Atual
-                v_atual = val
+            if i == 0: # Tendência baseada no mês anterior
                 d_prev = datetime.now() - timedelta(days=30)
                 mid_prev = f"{d_prev.year}-{d_prev.month:02d}"
                 v_prev = evolucao_dict.get(mid_prev, 0)
                 if v_prev > 0:
-                    tendencia_exposicao = ((v_atual - v_prev) / v_prev) * 100
+                    tendencia_exposicao = ((val - v_prev) / v_prev) * 100
 
-        # 2. Índice de Risco (Dinâmico, baseado na taxa de inconsistência)
-        # Padronizando com Dashboard: inconsistência = risco
         risco_dinamico = int((total_irregulares / total_notas * 100)) if total_notas > 0 else 0
 
         return {
@@ -109,72 +92,63 @@ def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_current
         return {"error": str(e)}
 
 @router.get("/summary", summary="Relatório de ROI e Valor Realizado")
-def get_roi_summary(empresa_id: str = None, user: dict = Depends(get_current_user)):
+async def get_roi_summary(empresa_id: str = None, user: dict = Depends(get_current_user)):
     """
-    Calcula o ROI consolidado do escritório ou por cliente.
-    Se for Monitor, força o filtro pela empresa vinculada.
+    Calcula o ROI consolidado.
     """
     try:
-        # Usamos o cliente autenticado do usuário para respeitar RLS
-        user_client = supabase_service.get_client_for_user(get_current_token())
+        token = user.get('access_token')
+        user_client = supabase_service.get_client_for_user(token)
+        admin_client = supabase_service.get_service_client()
         
-        # Buscar perfil para identificação básica
-        profile_res = user_client.table("profiles").select("role, empresa_id, tenant_id").eq("id", user['id']).single().execute()
+        # Buscar perfil
+        profile_res = admin_client.table("profiles").select("role, empresa_id, tenant_id").eq("id", user['id']).single().execute()
         profile = profile_res.data or {}
         role = profile.get('role')
         linked_company = profile.get('empresa_id')
-        tenant_id = profile.get('tenant_id')
             
-        # Se for Monitor, IGNORA o parametro empresa_id e usa o vinculado
         if role == 'monitor':
-            if not linked_company:
-                 return {
-                    "total_creditos_identificados": 0,
-                    "alertas_resolvidos": 0,
-                    "economia_estimada": 0,
-                    "potencial_glosa": 0,
-                    "valor_mensal_plano": 499.00,
-                    "roi_ratio": 0
-                }
             empresa_id = linked_company
         
-        # 1. Total de Créditos CBS/IBS (Estimativa de 1% do valor total das notas)
-        # Usar user_client para respeitar RLS
+        # 1. Total de Créditos de Recuperação (Auditados via is_opportunity)
+        query_alertas_opp = user_client.table("alertas_conformidade").select("diferenca").eq("is_opportunity", True).eq("resolvido", False)
+        if empresa_id:
+            query_alertas_opp = query_alertas_opp.eq("empresa_id", empresa_id)
+        res_opp = query_alertas_opp.execute()
+        total_recuperacao = sum(float(item.get('diferenca', 0) or 0) for item in (res_opp.data or []))
+
+        # 2. Total de Notas para Cálculo de Transição (Estimativa de Reforma)
         query_notas = user_client.table("notas_fiscais").select("valor_total")
-        
         if empresa_id:
             query_notas = query_notas.eq("empresa_id", empresa_id)
         
-        res = query_notas.execute()
-        print(f"DEBUG ROI SUMMARY: Encontradas {len(res.data) if res.data else 0} notas para cálculo.")
+        res_notas = query_notas.execute()
+        total_transicao = sum((float(item.get('valor_total', 0) or 0) * 0.01) for item in (res_notas.data or []))
         
-        # Padronizando com Dashboard: 1% estimado se crédito real for zero
-        total_creditos = sum((float(item.get('valor_total', 0) or 0) * 0.01) for item in (res.data or []))
-        
-        # 2. Total de Alertas (Potencial Glosa)
+        # 2. Total de Alertas (Glosa)
         query_alertas = user_client.table("alertas_conformidade").select("diferenca").eq("resolvido", False)
         if empresa_id:
             query_alertas = query_alertas.eq("empresa_id", empresa_id)
-            
         res_alertas = query_alertas.execute()
         total_glosa = sum(item.get('diferenca', 0) or 0 for item in (res_alertas.data or []))
 
-        # 3. Total de Alertas Resolvidos (Economia Realizada)
-        query_alertas_resolvidos = user_client.table("alertas_conformidade").select("diferenca").eq("resolvido", True)
+        # 3. Alertas Resolvidos
+        query_res = user_client.table("alertas_conformidade").select("diferenca").eq("resolvido", True)
         if empresa_id:
-            query_alertas_resolvidos = query_alertas_resolvidos.eq("empresa_id", empresa_id)
-        
-        res_alertas_resolvidos = query_alertas_resolvidos.execute()
-        alertas_resolvidos_count = len(res_alertas_resolvidos.data) if res_alertas_resolvidos.data else 0
-        economia_realizada = sum(abs(item.get('diferenca', 0) or 0) for item in (res_alertas_resolvidos.data or []))
+            query_res = query_res.eq("empresa_id", empresa_id)
+        res_resolvidos = query_res.execute()
+        alertas_resolvidos_count = len(res_resolvidos.data) if res_resolvidos.data else 0
+        economia_realizada = sum(abs(item.get('diferenca', 0) or 0) for item in (res_resolvidos.data or []))
         
         return {
-            "total_creditos_identificados": total_creditos,
+            "total_creditos_identificados": total_recuperacao + total_transicao,
+            "creditos_recuperacao": total_recuperacao,
+            "creditos_transicao": total_transicao,
             "alertas_resolvidos": alertas_resolvidos_count,
             "economia_estimada": economia_realizada,
             "potencial_glosa": total_glosa,
             "valor_mensal_plano": 499.00,
-            "roi_ratio": (total_creditos + economia_realizada) / 499.00 if (total_creditos + economia_realizada) > 0 else 0
+            "roi_ratio": (total_recuperacao + total_transicao + economia_realizada) / 499.00 if (total_recuperacao + total_transicao + economia_realizada) > 0 else 0
         }
     except Exception as e:
         print(f"Erro ROI: {e}")

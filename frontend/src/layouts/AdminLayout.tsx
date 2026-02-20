@@ -1,8 +1,9 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, LogOut, ShieldCheck, Table } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 
 export function AdminLayout() {
     const { signOut, profile } = useAuth();
@@ -14,10 +15,27 @@ export function AdminLayout() {
         navigate('/login');
     };
 
+    const [pendingCount, setPendingCount] = React.useState(0);
+
+    React.useEffect(() => {
+        const fetchPending = async () => {
+            try {
+                const res = await api.get('/admin/requests?status=pending');
+                setPendingCount(res.length);
+            } catch (err) {
+                console.error("Failed to fetch pending requests count", err);
+            }
+        };
+        fetchPending();
+        const interval = setInterval(fetchPending, 30000); // Check every 30s
+        return () => clearInterval(interval);
+    }, []);
+
     const navItems = [
-        { icon: LayoutDashboard, label: 'Visão Geral', path: '/admin' },
+        { icon: LayoutDashboard, label: 'Visão Geral', path: '/admin', badge: pendingCount > 0 ? pendingCount : null },
         { icon: Building2, label: 'Escritórios (Tenants)', path: '/admin/tenants' },
         { icon: Users, label: 'Usuários do Sistema', path: '/admin/users' },
+        { icon: Table, label: 'Regras Fiscais', path: '/admin/rules' },
     ];
 
     return (
@@ -42,14 +60,21 @@ export function AdminLayout() {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                                    "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                                     isActive
                                         ? "bg-red-600 text-white shadow-lg shadow-red-900/20"
                                         : "text-end-text-sec hover:text-white hover:bg-white/5"
                                 )}
                             >
-                                <item.icon size={18} className={cn("", isActive ? "text-white" : "group-hover:text-red-500 transition-colors")} />
-                                {item.label}
+                                <div className="flex items-center gap-3">
+                                    <item.icon size={18} className={cn("", isActive ? "text-white" : "group-hover:text-red-500 transition-colors")} />
+                                    {item.label}
+                                </div>
+                                {item.badge && (
+                                    <span className="bg-white text-red-600 text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full">
+                                        {item.badge}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}

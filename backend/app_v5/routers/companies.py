@@ -36,6 +36,7 @@ class CompanyCreate(BaseModel):
     razao_social: str = Field(None, max_length=150)
     email: str = Field(None)
     telefone: str = Field(None)
+    regime_tributario: str = Field("lucro_real")
 
 @router.post("/", summary="Cadastra nova empresa")
 def create_company(company: CompanyCreate, user: dict = Depends(get_current_user)):
@@ -44,7 +45,8 @@ def create_company(company: CompanyCreate, user: dict = Depends(get_current_user
         
         # Dados limpos e validados via Pydantic
         company_data = company.dict()
-        cnpj = company_data["cnpj"]
+        cnpj = company_data["cnpj"].replace(".", "").replace("/", "").replace("-", "")
+        company_data["cnpj"] = cnpj
         
         # Verificar se esse CNPJ já existe (CNPJ é único por empresa no Brasil)
         existing = client.table("empresas").select("id").eq("cnpj", cnpj).execute()

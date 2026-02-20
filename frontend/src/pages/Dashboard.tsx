@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { RiskThermometer } from '../components/RiskThermometer';
 import { TrendingUp, AlertOctagon, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { cn } from '../lib/utils';
+import { useFeatures } from '../hooks/useFeatures';
 
 interface DashboardMetrics {
     risco_score: number;
@@ -11,7 +12,7 @@ interface DashboardMetrics {
     notas_com_erro: number;
     valor_bens_servicos: number;
     credito_tributario_potencial: number;
-    status: 'seguro' | 'alerta' | 'critico';
+    status: 'seguro' | 'atencao' | 'critico';
 }
 
 interface Alert {
@@ -23,10 +24,13 @@ interface Alert {
 }
 
 export function Dashboard() {
+    const navigate = useNavigate();
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [roiData, setRoiData] = useState<any>(null);
     const [alerts, setAlerts] = useState<Alert[]>([]);
+    const [anomalies, setAnomalies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { hasFeature, tier } = useFeatures();
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -34,10 +38,11 @@ export function Dashboard() {
         async function fetchMetrics() {
             try {
                 console.log("Fetching dashboard metrics...");
-                const [metricsData, roiData, alertsData] = await Promise.all([
+                const [metricsData, roiData, alertsData, anomalyData] = await Promise.all([
                     api.get('/dashboard/current-company'),
                     api.get('/roi/summary'),
-                    api.get('/alerts')
+                    api.get('/alerts'),
+                    hasFeature('ai_anomaly_detection') ? api.get('/anomalies/detect') : Promise.resolve({ anomalies: [] })
                 ]);
 
                 console.log("Metrics received:", metricsData);
@@ -46,7 +51,8 @@ export function Dashboard() {
 
                 setMetrics(metricsData);
                 setRoiData(roiData);
-                setAlerts(alertsData.slice(0, 5)); // Mostrar apenas as 5 últimas
+                setAlerts(alertsData.slice(0, 5));
+                setAnomalies(anomalyData.anomalies || []);
             } catch (error: any) {
                 console.error("Failed to fetch dashboard data", error);
                 setError(error.message || "Erro desconhecido");
@@ -59,17 +65,22 @@ export function Dashboard() {
 
     if (loading) {
         return (
-            <div className="p-8 text-white space-y-4">
-                <div className="animate-pulse flex items-center gap-2">
-                    <div className="h-2 w-2 bg-end-accent rounded-full"></div>
-                    <span>Sincronizando inteligência fiscal...</span>
+            <div className="space-y-8 animate-pulse">
+                <div className="flex justify-between items-end">
+                    <div className="space-y-3">
+                        <div className="h-8 w-64 bg-white/5 rounded"></div>
+                        <div className="h-4 w-96 bg-white/5 rounded"></div>
+                    </div>
                 </div>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="text-xs text-end-text-sec hover:text-end-accent underline"
-                >
-                    A demora pode ser conexão. Clique aqui para recarregar.
-                </button>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-32 bg-end-card border border-end-border rounded-lg"></div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="h-[300px] bg-end-card border border-end-border rounded-lg"></div>
+                    <div className="h-[300px] bg-end-card border border-end-border rounded-lg"></div>
+                </div>
             </div>
         );
     }
@@ -94,30 +105,62 @@ export function Dashboard() {
 
                 {/* ROI / Value Realization Card */}
                 {roiData && (
-                    <div className="bg-end-accent/10 border border-end-accent/20 rounded-lg p-4 flex items-center gap-4">
-                        <div className="h-12 w-12 bg-end-accent rounded-full flex items-center justify-center text-black">
-                            <TrendingUp size={24} />
+                    <div className="bg-end-accent/10 border border-end-accent/20 rounded-lg p-4 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-end-accent rounded-full flex items-center justify-center text-black">
+                                <TrendingUp size={24} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] uppercase font-bold text-end-accent tracking-wider">Valor Gerado p/ Cliente</p>
+                                <p className="text-xl font-black text-white">R$ {(roiData?.total_creditos_identificados || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                <p className="text-[11px] text-end-text-sec italic">Calculado em créditos CBS/IBS identificados</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[10px] uppercase font-bold text-end-accent tracking-wider">Valor Gerado p/ Cliente</p>
-                            <p className="text-xl font-black text-white">R$ {(roiData?.total_creditos_identificados || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                            <p className="text-[11px] text-end-text-sec italic">Calculado em créditos CBS/IBS identificados</p>
+                        <span className="bg-end-accent/20 text-end-accent text-[9px] px-2 py-0.5 rounded font-black border border-end-accent/30 lowercase">pro</span>
+                    </div>
+                )}
+
+                {hasFeature('ai_anomaly_detection') && anomalies.length > 0 && (
+                    <div className="bg-end-error/10 border border-end-error/20 rounded-lg p-4 flex items-center justify-between gap-4 animate-bounce-subtle">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-end-error rounded-full flex items-center justify-center text-white">
+                                <AlertOctagon size={24} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] uppercase font-bold text-end-error tracking-wider italic">Alerta de Anomalia (IA)</p>
+                                <p className="text-xl font-black text-white">{anomalies.length} Comportamentos Atípicos</p>
+                                <p className="text-[11px] text-end-text-sec">Detectado desvio de faturamento acima da média</p>
+                            </div>
                         </div>
+                        <span className="bg-end-error/20 text-end-error text-[9px] px-2 py-0.5 rounded font-black border border-end-error/30 lowercase italic">enterprise</span>
                     </div>
                 )}
             </div>
 
+            {tier === 'starter' && (
+                <div className="bg-gradient-to-r from-end-accent/10 to-transparent border-l-4 border-end-accent p-6 rounded-r-lg">
+                    <h4 className="text-lg font-bold text-white mb-1">Evolua para o Plano PRO</h4>
+                    <p className="text-sm text-end-text-sec mb-4">Desbloqueie o Monitor de Sincronização Automática via SEFAZ e as Calculadoras de ROI.</p>
+                    <button
+                        onClick={() => navigate('/planos')}
+                        className="bg-end-accent text-black px-6 py-2 rounded font-black text-xs hover:scale-105 transition-transform"
+                    >
+                        CONHECER PLANOS
+                    </button>
+                </div>
+            )}
+
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-end-card border border-end-border p-5 rounded-lg">
+                <div className="bg-end-card border border-end-border p-5 rounded-lg border-l-4 border-l-blue-500 shadow-lg shadow-blue-500/5">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-end-text-sec text-sm font-medium">Crédito Potencial (IBS/CBS)</span>
-                        <TrendingUp className="text-end-accent" size={20} />
+                        <span className="text-end-text-sec text-sm font-medium uppercase tracking-wider">Recuperação Tributária</span>
+                        <TrendingUp className="text-blue-500" size={20} />
                     </div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-2xl font-black text-white">
                         R$ {stats.credito_tributario_potencial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
-                    <div className="text-xs text-end-text-sec mt-1">Baseado em 1% presumido</div>
+                    <div className="text-[10px] text-blue-400 mt-1 font-bold uppercase">Auditoria Monofásica Ativa</div>
                 </div>
 
                 <div className="bg-end-card border border-end-border p-5 rounded-lg">
@@ -144,11 +187,16 @@ export function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-end-card border border-end-border p-8 rounded-lg flex flex-col items-center justify-center min-h-[300px]">
-                    <h3 className="text-lg font-semibold text-white mb-6 w-full text-center">Termômetro de Risco Fiscal</h3>
+                <div className={cn(
+                    "bg-end-card border rounded-lg flex flex-col items-center justify-center min-h-[300px] transition-all",
+                    stats.status === 'critico' ? "border-end-error/30 shadow-[0_0_20px_rgba(239,68,68,0.1)]" :
+                        stats.status === 'atencao' ? "border-end-warning/30 shadow-[0_0_20px_rgba(245,158,11,0.1)]" :
+                            "border-end-border"
+                )}>
+                    <h3 className="text-lg font-semibold text-white mb-6 w-full text-center">Índice de Exposição Fiscal</h3>
                     <RiskThermometer score={stats.risco_score} size={280} />
                     <p className="text-sm text-end-text-sec mt-6 text-center max-w-sm">
-                        Este índice calcula a frequência de erros de destaque de impostos CBS/IBS nas notas recebidas.
+                        Calculado com base na auditoria de 100% dos XMLs via motor de regras inteligente.
                     </p>
                 </div>
 

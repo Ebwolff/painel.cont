@@ -54,7 +54,7 @@ async def upload_xml(
         nfe_data = parser_service.parse_nfe(content)
         
         # 2. Validação Tributária
-        validation_result = validator_service.validate_taxes(nfe_data)
+        validation_result = validator_service.validate_taxes(nfe_data, empresa_id=empresa_id)
         
         # 3. Persistência (Supabase)
         nota_id = supabase_service.insert_nfe_result(nfe_data, validation_result, tenant_id=tenant_id, empresa_id=empresa_id)

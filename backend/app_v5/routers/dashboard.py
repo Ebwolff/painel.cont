@@ -74,10 +74,24 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
             valor_res = query_valor.execute()
             valor_total_soma = sum([float(item.get('valor_total', 0) or 0) for item in (valor_res.data or [])])
             
-            # Cálculo do Score de Risco
-            risco_score = 0
-            if total_notas > 0:
-                risco_score = int((notas_com_erro / total_notas) * 100)
+            # Cálculo de Glosa e Créditos via query de alertas
+            # Glosa = Erros de Compliance (Risco)
+            # Crédito = Oportunidades Identificadas (Economia)
+            query_alertas = admin_client.table("alertas_conformidade").select("diferenca, is_opportunity").eq("tenant_id", tenant_id).eq("resolvido", False)
+            if role == 'monitor' and empresa_id:
+                query_alertas = query_alertas.eq("empresa_id", empresa_id)
+            res_alertas = query_alertas.execute()
+            
+            alertas_data = res_alertas.data or []
+            total_glosa = sum(float(a.get('diferenca', 0) or 0) for a in alertas_data if not a.get('is_opportunity', False))
+            total_creditos = sum(float(a.get('diferenca', 0) or 0) for a in alertas_data if a.get('is_opportunity', False))
+
+            # Cálculo de Score END (Ponderado - Camada 3)
+            # 50% Frequência de Erros | 50% Impacto Financeiro (vs Faturamento)
+            frequencia_score = (notas_com_erro / total_notas * 50) if total_notas > 0 else 0
+            impacto_score = (total_glosa / (valor_total_soma or 1) * 500) if valor_total_soma > 0 else 0 # Escala de impacto
+            
+            risco_score = int(min(frequencia_score + impacto_score, 100))
                 
             return {
                 "empresa_id": empresa_id if role == 'monitor' else tenant_id, 
@@ -85,7 +99,7 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
                 "total_notas": total_notas,
                 "notas_com_erro": notas_com_erro,
                 "valor_bens_servicos": valor_total_soma,
-                "credito_tributario_potencial": valor_total_soma * 0.01, # 1% estimado de recuperação
+                "credito_tributario_potencial": total_creditos,
                 "status": "seguro" if risco_score <= 15 else "atencao" if risco_score <= 40 else "critico"
             }
         except Exception as query_error:

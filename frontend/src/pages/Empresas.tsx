@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, MoreVertical, ShieldCheck, ShieldAlert, RefreshCw, Key, Trash2 } from 'lucide-react';
+import { Building2, MoreVertical, ShieldCheck, ShieldAlert, RefreshCw, Key, Trash2, Star, Lock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useFeatures } from '../hooks/useFeatures';
+import { useNavigate } from 'react-router-dom';
 
 export function Empresas() {
+    const navigate = useNavigate();
     const { hasPermission } = useAuth();
+    const { hasFeature, tier } = useFeatures();
     const [companies, setCompanies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -16,7 +20,7 @@ export function Empresas() {
     const [newCompany, setNewCompany] = useState({
         razao_social: '',
         cnpj: '',
-        regime_tributario: 'Simples Nacional'
+        regime_tributario: 'lucro_real'
     });
 
     const [isCertModalOpen, setIsCertModalOpen] = useState(false);
@@ -87,7 +91,7 @@ export function Empresas() {
             await api.post('/companies/', newCompany);
             alert("Empresa cadastrada com sucesso!");
             setIsModalOpen(false);
-            setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'Simples Nacional' });
+            setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real' });
             fetchCompanies();
         } catch (error: any) {
             console.error("Failed to create company", error);
@@ -171,9 +175,9 @@ export function Empresas() {
                                     onChange={e => setNewCompany({ ...newCompany, regime_tributario: e.target.value })}
                                     className="w-full bg-end-bg border border-end-border rounded p-2 text-white outline-none focus:border-end-accent"
                                 >
-                                    <option>Simples Nacional</option>
-                                    <option>Lucro Presumido</option>
-                                    <option>Lucro Real</option>
+                                    <option value="simples_nacional">Simples Nacional</option>
+                                    <option value="lucro_presumido">Lucro Presumido</option>
+                                    <option value="lucro_real">Lucro Real</option>
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-4">
@@ -294,7 +298,10 @@ export function Empresas() {
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-end-text-sec uppercase font-bold tracking-wider">Status Fiscal</span>
-                                    <span className="text-white font-medium">{empresa.regime_tributario}</span>
+                                    <span className="text-white font-medium">
+                                        {empresa.regime_tributario === 'simples_nacional' ? 'Simples Nacional' :
+                                            empresa.regime_tributario === 'lucro_presumido' ? 'Lucro Presumido' : 'Lucro Real'}
+                                    </span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1.5 text-end-success font-medium text-xs">
@@ -305,28 +312,43 @@ export function Empresas() {
 
                             <div className="mt-6 pt-6 border-t border-end-border grid grid-cols-2 gap-3">
                                 <button
-                                    onClick={() => handleSync(empresa.id)}
+                                    onClick={() => {
+                                        if (!hasFeature('sefaz_sync')) {
+                                            navigate('/planos');
+                                            return;
+                                        }
+                                        handleSync(empresa.id);
+                                    }}
                                     disabled={syncing === empresa.id}
                                     className={cn(
                                         "flex items-center justify-center gap-2 py-2 rounded border border-end-border text-[10px] font-black uppercase transition-all",
-                                        syncing === empresa.id ? "bg-white/5 opacity-50 cursor-not-allowed" : "bg-white/5 hover:bg-end-accent hover:text-black hover:border-end-accent"
+                                        syncing === empresa.id ? "bg-white/5 opacity-50 cursor-not-allowed" :
+                                            !hasFeature('sefaz_sync') ? "bg-white/5 text-end-text-sec opacity-60 hover:border-end-accent" :
+                                                "bg-white/5 hover:bg-end-accent hover:text-black hover:border-end-accent"
                                     )}
                                 >
-                                    <RefreshCw size={12} className={syncing === empresa.id ? "animate-spin" : ""} />
+                                    {syncing === empresa.id ? <RefreshCw size={12} className="animate-spin" /> :
+                                        !hasFeature('sefaz_sync') ? <Lock size={12} className="text-end-accent" /> : <RefreshCw size={12} />}
                                     {syncing === empresa.id ? "Sinc..." : "SEFAZ Sync"}
                                 </button>
 
                                 <button
                                     onClick={() => {
+                                        if (!hasFeature('sefaz_sync')) {
+                                            navigate('/planos');
+                                            return;
+                                        }
                                         setSelectedCompany(empresa.id);
                                         setIsCertModalOpen(true);
                                     }}
                                     className={cn(
                                         "flex items-center justify-center gap-2 py-2 rounded border border-end-border text-[10px] font-black uppercase transition-all",
-                                        empresa.servico_sefaz_ativo ? "bg-end-success/20 text-end-success border-end-success/30 hover:bg-end-success/30" : "bg-white/5 hover:bg-white/10"
+                                        empresa.servico_sefaz_ativo ? "bg-end-success/20 text-end-success border-end-success/30 hover:bg-end-success/30" :
+                                            !hasFeature('sefaz_sync') ? "bg-white/5 text-end-text-sec opacity-60 hover:border-end-accent" :
+                                                "bg-white/5 hover:bg-white/10"
                                     )}
                                 >
-                                    <Key size={12} />
+                                    {!hasFeature('sefaz_sync') ? <Lock size={12} className="text-end-accent" /> : <Key size={12} />}
                                     {empresa.servico_sefaz_ativo ? "Certificado Ok" : "Add Certificado"}
                                 </button>
                             </div>

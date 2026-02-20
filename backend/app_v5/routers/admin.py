@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app_v5.core.security import get_current_token
 from app_v5.core.supabase_client import SupabaseService
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 supabase_service = SupabaseService()
@@ -9,7 +10,12 @@ supabase_service = SupabaseService()
 class TenantCreate(BaseModel):
     nome: str
     cnpj: str
-    plano: str = 'free'
+    plano: str = 'starter'
+
+class TenantUpdate(BaseModel):
+    nome: str
+    cnpj: str
+    plano: str
 
 # Dependency to check if user is super_admin
 async def verify_super_admin(token: str = Depends(get_current_token)):
@@ -68,6 +74,29 @@ async def create_tenant(tenant: TenantCreate, client = Depends(verify_super_admi
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {str(e)}")
 
+@router.put("/tenants/{tenant_id}", summary="Atualizar tenant (Super Admin)")
+async def update_tenant(tenant_id: str, data: TenantUpdate, client = Depends(verify_super_admin)):
+    admin_client = supabase_service.get_service_client()
+    
+    res = admin_client.table("tenants").update(data.dict()).eq("id", tenant_id).execute()
+    
+    if not res.data:
+         raise HTTPException(status_code=404, detail="Tenant não encontrado.")
+         
+    return res.data[0]
+
+@router.delete("/tenants/{tenant_id}", summary="Excluir tenant (Super Admin)")
+async def delete_tenant(tenant_id: str, client = Depends(verify_super_admin)):
+    admin_client = supabase_service.get_service_client()
+    
+    # Excluir tenant (RLS e FK cascades cuidam do resto se configurado, senão precisamos de cuidado)
+    res = admin_client.table("tenants").delete().eq("id", tenant_id).execute()
+    
+    if not res.data:
+         raise HTTPException(status_code=404, detail="Tenant não encontrado.")
+         
+    return {"status": "deleted"}
+
 # --- USER MANAGEMENT ---
 
 class UserCreate(BaseModel):
@@ -84,6 +113,10 @@ class UserAdminUpdate(BaseModel):
     nome: str
     role: str
     tenant_id: str
+
+class PlanRequestProcess(BaseModel):
+    status: str # 'approved' | 'rejected'
+    admin_notes: str = None
 
 @router.get("/users/{tenant_id}", summary="Listar usuários de um tenant (Super Admin)")
 async def list_users(tenant_id: str, client = Depends(verify_super_admin)):
@@ -178,9 +211,67 @@ async def get_dashboard_stats(client = Depends(verify_super_admin)):
     # 4. Recent Tenants (Limit 5)
     recent_res = admin_client.table("tenants").select("*").order("created_at", desc=True).limit(5).execute()
     
+    # 5. Plan Distribution & MRR
+    # Preços definidos: Starter: 499, Pro: 997, Enterprise: 2490
+    all_tenants_res = admin_client.table("tenants").select("plano").execute()
+    all_tenants_data = all_tenants_res.data or []
+    
+    plan_counts = {"starter": 0, "pro": 0, "enterprise": 0}
+    for t in all_tenants_data:
+        p = t.get("plano", "starter")
+        if p in plan_counts:
+            plan_counts[p] += 1
+        else:
+            plan_counts["starter"] += 1
+            
+    mrr = (plan_counts["starter"] * 499) + (plan_counts["pro"] * 997) + (plan_counts["enterprise"] * 2490)
+    
     return {
         "total_tenants": total_tenants,
         "active_users": total_users,
         "processed_xmls": total_xmls,
-        "recent_tenants": recent_res.data
+        "recent_tenants": recent_res.data,
+        "plan_stats": {
+            "counts": plan_counts,
+            "mrr": mrr
+        }
     }
+
+# --- PLAN REQUESTS MANAGEMENT ---
+
+@router.get("/requests", summary="Listar solicitações de upgrade (Super Admin)")
+async def list_plan_requests(status: str = 'pending', client = Depends(verify_super_admin)):
+    admin_client = supabase_service.get_service_client()
+    res = admin_client.table("plan_requests")\
+        .select("*, tenants(nome, cnpj)")\
+        .eq("status", status)\
+        .order("created_at", desc=True)\
+        .execute()
+    return res.data
+
+@router.put("/requests/{request_id}/process", summary="Processar solicitação de upgrade")
+async def process_plan_request(request_id: str, data: PlanRequestProcess, client = Depends(verify_super_admin)):
+    admin_client = supabase_service.get_service_client()
+    
+    # 1. Buscar solicitação
+    req_res = admin_client.table("plan_requests").select("*").eq("id", request_id).single().execute()
+    if not req_res.data:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+    
+    request_data = req_res.data
+    tenant_id = request_data['tenant_id']
+    requested_plan = request_data['requested_plan']
+    
+    # 2. Atualizar status da solicitação
+    update_data = {
+        "status": data.status,
+        "processed_at": datetime.now().isoformat(),
+        "admin_notes": data.admin_notes
+    }
+    admin_client.table("plan_requests").update(update_data).eq("id", request_id).execute()
+    
+    # 3. Se aprovado, atualizar plano do tenant
+    if data.status == 'approved':
+        admin_client.table("tenants").update({"plano": requested_plan}).eq("id", tenant_id).execute()
+        
+    return {"status": "processed", "result": data.status}

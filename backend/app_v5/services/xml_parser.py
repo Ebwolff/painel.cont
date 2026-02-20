@@ -76,8 +76,13 @@ class XMLParserService:
                 # Emitente / Destinatário
                 "emitente_cnpj": self._get_text(root, "emit/CNPJ") or self._get_text(root, "emit/CPF"),
                 "emitente_nome": self._get_text(root, "emit/xNome"),
+                "emitente_uf": (
+                    self._get_text(root, "emit/enderEmit/UF") or
+                    self._get_text(root, "ide/cUF")
+                ),
                 "destinatario_cnpj": self._get_text(root, "dest/CNPJ") or self._get_text(root, "dest/CPF"),
                 "destinatario_nome": self._get_text(root, "dest/xNome"),
+                "destinatario_uf": self._get_text(root, "dest/enderDest/UF"),
                 
                 # Valores Totais
                 "valor_total": float(self._get_text(root, "total/ICMSTot/vNF") or 0.0),
@@ -89,14 +94,44 @@ class XMLParserService:
                 "itens": []
             }
 
-            # Extrair Itens para análise granular (opcional no MVP 1)
-            # for det in root.findall(".//nfe:det", self.NAMESPACES):
-            #     dados["itens"].append({
-            #         "nItem": det.get("nItem"),
-            #         "prod": self._get_text(det, "prod/xProd"),
-            #         "ncm": self._get_text(det, "prod/NCM"),
-            #         "vProd": float(self._get_text(det, "prod/vProd") or 0.0)
-            #     })
+            # Extrair Itens para análise granular (NCM, CFOP, CST por item)
+            det_elements = root.xpath(".//*[local-name()='det']")
+            for det in det_elements:
+                item = {
+                    "n_item": int(det.get("nItem") or 0),
+                    "x_prod": self._get_text(det, "prod/xProd"),
+                    "ncm": self._get_text(det, "prod/NCM"),
+                    "cfop": self._get_text(det, "prod/CFOP"),
+                    "cst": (
+                        self._get_text(det, "imposto/ICMS/ICMS00/CST") or
+                        self._get_text(det, "imposto/ICMS/ICMS10/CST") or
+                        self._get_text(det, "imposto/ICMS/ICMS20/CST") or
+                        self._get_text(det, "imposto/ICMS/ICMS60/CST") or
+                        self._get_text(det, "imposto/ICMS/ICMSSN101/CSOSN") or
+                        self._get_text(det, "imposto/ICMS/ICMSSN102/CSOSN")
+                    ),
+                    "v_prod": float(self._get_text(det, "prod/vProd") or 0.0),
+                    # Campos da Reforma
+                    "v_cbs": float(self._get_text(det, "imposto/vCBS") or 0.0),
+                    "v_ibs": float(self._get_text(det, "imposto/vIBS") or 0.0),
+                    # Tributos Vigentes (Legado)
+                    "v_pis": float(
+                        self._get_text(det, "imposto/PIS/PISAliq/vPIS") or 
+                        self._get_text(det, "imposto/PIS/PISOutr/vPIS") or 0.0
+                    ),
+                    "v_cofins": float(
+                        self._get_text(det, "imposto/COFINS/COFINSAliq/vCOFINS") or 
+                        self._get_text(det, "imposto/COFINS/COFINSOutr/vCOFINS") or 0.0
+                    ),
+                    "v_icms": float(
+                        self._get_text(det, "imposto/ICMS/ICMS00/vICMS") or 
+                        self._get_text(det, "imposto/ICMS/ICMS10/vICMS") or 
+                        self._get_text(det, "imposto/ICMS/ICMS20/vICMS") or 
+                        self._get_text(det, "imposto/ICMS/ICMS70/vICMS") or 
+                        self._get_text(det, "imposto/ICMS/ICMS90/vICMS") or 0.0
+                    ),
+                }
+                dados["itens"].append(item)
 
             return dados
 

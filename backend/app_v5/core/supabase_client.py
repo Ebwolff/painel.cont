@@ -171,6 +171,7 @@ class SupabaseService:
                     "empresa_id": empresa_id,
                     "nota_fiscal_id": nota_id,
                     "tipo": alerta["tipo"],
+                    "is_opportunity": alerta.get("is_opportunity", False),
                     "severidade": alerta["severidade"],
                     "mensagem": alerta["mensagem"],
                     "valor_esperado": alerta["valor_esperado"],
@@ -179,5 +180,27 @@ class SupabaseService:
                 })
             
             client.table("alertas_conformidade").insert(alertas_payload).execute()
+
+        # 4. Inserir Itens da Nota para Auditoria Detalhada
+        if nfe_data.get("itens"):
+            itens_payload = []
+            for item in nfe_data["itens"]:
+                itens_payload.append({
+                    "tenant_id": tenant_id,
+                    "empresa_id": empresa_id,
+                    "nota_fiscal_id": nota_id,
+                    "n_item": item.get("n_item"),
+                    "x_prod": item.get("x_prod"),
+                    "ncm": item.get("ncm"),
+                    "cfop": item.get("cfop"),
+                    "v_prod": item.get("v_prod"),
+                    "v_cbs": item.get("v_cbs"),
+                    "v_ibs": item.get("v_ibs"),
+                    "cbs_correto": item.get("cbs_correto", True), # Placeholder, validação por item virá na prox iteração
+                    "ibs_correto": item.get("ibs_correto", True)
+                })
+            
+            if itens_payload:
+                client.table("nfe_items").insert(itens_payload).execute()
 
         return nota_id

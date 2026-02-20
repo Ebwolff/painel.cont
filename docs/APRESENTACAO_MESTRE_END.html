@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação Mestre - END Intelligence Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-accent: #3b82f6;
+            --secondary: #f59e0b;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+            }
+
+            .btn-print {
+                display: none !important;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .card {
+                break-inside: avoid;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        header.main-header {
+            text-align: center;
+            border-bottom: 5px solid var(--primary);
+            padding-bottom: 40px;
+            margin-bottom: 60px;
+        }
+
+        header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.8rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: var(--primary-accent);
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 50px 0 30px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 35px;
+            background: var(--secondary);
+            margin-right: 20px;
+            border-radius: 4px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            text-align: justify;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-accent);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .card ul {
+            margin-left: 20px;
+        }
+
+        .card li {
+            margin-bottom: 10px;
+        }
+
+        .highlight-box {
+            background: var(--primary);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            margin: 40px 0;
+        }
+
+        .highlight-box h2 {
+            color: var(--secondary);
+            margin-bottom: 20px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .layer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .layer-table th {
+            background: var(--primary-accent);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .layer-table td {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .layer-name {
+            font-weight: 700;
+            color: var(--primary);
+            width: 25%;
+        }
+
+        .footer {
+            margin-top: 100px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            padding-top: 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .btn-print {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: var(--primary-accent);
+            color: white;
+            padding: 18px 35px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.4);
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1rem;
+        }
+
+        .btn-print:hover {
+            transform: scale(1.05);
+            background: #2563eb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: #fef3c7;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="btn-print" onclick="window.print()">Exportar PDF Completo</button>
+
+    <div class="container">
+        <header class="main-header">
+            <h1>END Intelligence Platform</h1>
+            <p class="subtitle">Manual de Operação e Visão Estratégica 2026</p>
+        </header>
+
+        <section class="section">
+            <h2 class="section-title">1. O Sistema Hoje: Monitoramento Fiscal</h2>
+            <p>O END Monitor Contábil atua como a primeira linha de defesa entre o fisco e o contribuinte, focando na
+                conformidade imediata e na segurança operacional.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>Aquisição de Dados</h3>
+                    <ul>
+                        <li><strong>Conexão SEFAZ:</strong> Busca automática via Certificado Digital A1.</li>
+                        <li><strong>Upload XML:</strong> Processamento instantâneo de arquivos manuais.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Auditoria Automática</h3>
+                    <ul>
+                        <li><strong>Recálculo Tributário:</strong> O sistema refaz os cálculos de CBS e IBS baseado na
+                            lei.</li>
+                        <li><strong>Alertas de Erro:</strong> Identificação de divergências maiores que R$ 0,05.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <div class="page-break"></div>
+
+        <section class="section">
+            <h2 class="section-title">2. A Evolução: Plataforma de Inteligência</h2>
+            <p>Estamos transformando o monitoramento passivo em uma plataforma de inteligência empresarial ativa,
+                dividida em três camadas de valor:</p>
+
+            <table class="layer-table">
+                <thead>
+                    <tr>
+                        <th>Camada</th>
+                        <th>Foco Estratégico</th>
+                        <th>Principais Entregas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="layer-name">Monitor Fiscal</td>
+                        <td>Operação e Conformidade</td>
+                        <td>Monitor de Créditos Ocultos, Validação Multitributos (ICMS/PIS/COFINS).</td>
+                    </tr>
+                    <tr>
+                        <td class="layer-name">Monitor Financeiro</td>
+                        <td>Gestão e Lucratividade</td>
+                        <td>Margem Real por Produto (NCM), Análise de Dependência de Fornecedores.</td>
+                    </tr>
+                    <tr>
+                        <td class="layer-name">Monitor Estratégico</td>
+                        <td>Visão de Futuro e Risco</td>
+                        <td>Score de Risco Fiscal (Score END), Simulador de Reforma, IA Preditiva.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="highlight-box">
+                <h2>O Cérebro do Sistema (Matching Engine)</h2>
+                <p>Nossa tecnologia não apenas lê a nota, ela a compreende. Através da assinatura <strong>NCM + CFOP +
+                        CST</strong>, o sistema cruza os dados do XML com um banco de regras legais dinâmico, alimentado
+                    por fontes oficiais (IBPT/IOB).</p>
+                <p>Isso permite identificar não apenas o erro, mas a <strong>oportunidade</strong>: onde o seu cliente
+                    está pagando imposto a mais por erro de classificação.</p>
+            </div>
+        </section>
+
+        <div class="page-break"></div>
+
+        <section class="section">
+            <h2 class="section-title">3. Valor Financeiro e Resultados</h2>
+            <p>O END Intelligence Portal foi desenhado para gerar retorno financeiro direto (ROI) para o contador e seu
+                cliente:</p>
+
+            <div class="grid">
+                <div class="card">
+                    <span class="badge">ECONOMIA</span>
+                    <h3>Recuperação de Créditos</h3>
+                    <p>Média de 1% de faturamento recuperado através da detecção de CSTs incompatíveis e créditos não
+                        aproveitados.</p>
+                </div>
+                <div class="card">
+                    <span class="badge">SEGURANÇA</span>
+                    <h3>Proteção contra Multas</h3>
+                    <p>Alertas imediatos que permitem a correção da nota fiscal antes da escrituração, evitando
+                        autuações pesadas.</p>
+                </div>
+                <div class="card">
+                    <span class="badge">GESTÃO</span>
+                    <h3>Margem Real</h3>
+                    <p>Visão clara de quais produtos são realmente lucrativos após todos os impostos "escondidos" na
+                        nota.</p>
+                </div>
+                <div class="card">
+                    <span class="badge">FUTURO</span>
+                    <h3>Transição Reforma</h3>
+                    <p>Simulação precisa de como o caixa da empresa será impactado pela mudança para o sistema de IVA
+                        (CBS/IBS).</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">4. Próximos Passos e IA</h2>
+            <p>A fase final da evolução introduz o <strong>Aprendizado de Máquina</strong>:</p>
+            <ul>
+                <li><strong>IA Comportamental:</strong> Detecção de anomalias que fogem ao padrão histórico do cliente.
+                </li>
+                <li><strong>Curadoria Automatizada:</strong> Sugestão de melhoras baseadas em desvios de mercado.</li>
+                <li><strong>Relatórios Executivos:</strong> Documentos gerados por IA prontos para serem apresentados em
+                    reuniões estratégicas.</li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>END Monitor Contábil - Plataforma de Inteligência Fiscal</p>
+            <p>Documento Mestre Consolidador © 2026 - Uso Corporativo</p>
+        </footer>
+    </div>
+
+</body>
+
+</html>

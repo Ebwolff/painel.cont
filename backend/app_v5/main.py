@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+import logging
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from app_v5.services.external_sync import ExternalSyncService
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +25,40 @@ from slowapi.errors import RateLimitExceeded
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Scheduler Configuration
+scheduler = AsyncIOScheduler()
+
+async def scheduled_tax_sync():
+    """Tarefa periódica de sincronização fiscal."""
+    logger.info("CRON: Iniciando atualização automática semanal de alíquotas...")
+    try:
+        sync_service = ExternalSyncService()
+        result = await sync_service.sync_federal_rates()
+        logger.info(f"CRON: Sincronização automática concluída. Novas: {result['created']}, Atualizadas: {result['updated']}")
+    except Exception as e:
+        logger.error(f"CRON: Falha na sincronização automática: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    # Agendar para toda Segunda-feira às 03:00 AM
+    scheduler.add_job(
+        scheduled_tax_sync, 
+        "cron", 
+        day_of_week="mon", 
+        hour=3, 
+        minute=0,
+        id="weekly_tax_sync",
+        replace_existing=True
+    )
+    # scheduler.add_job(scheduled_tax_sync, "interval", minutes=1) # Para teste rápido se necessário
+    scheduler.start()
+    logger.info("SCHEDULER: Agendador de tarefas iniciado (Sincronização Fiscal: Segunda às 03:00)")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    scheduler.shutdown()
+    logger.info("SCHEDULER: Agendador de tarefas finalizado.")
 
 # CORS Configuration
 # Em produção, deve ser estrito.
@@ -49,7 +88,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug
+from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug, items, simulation, features, anomalies, admin_rules
 
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(debug.router, prefix="/api/dashboard", tags=["Dashboard"])
@@ -59,6 +98,11 @@ app.include_router(companies.router, prefix="/api/companies", tags=["Companies"]
 app.include_router(roi.router, prefix="/api/roi", tags=["ROI"])
 app.include_router(certificates.router, prefix="/api/certificates", tags=["Certificates"])
 app.include_router(sefaz.router, prefix="/api/sefaz", tags=["SEFAZ"])
+app.include_router(items.router, prefix="/api/items", tags=["Items"])
+app.include_router(simulation.router, prefix="/api/simulation", tags=["Simulation"])
+app.include_router(features.router, prefix="/api/features", tags=["Features"])
+app.include_router(anomalies.router, prefix="/api/anomalies", tags=["Anomalies"])
+app.include_router(admin_rules.router, prefix="/api", tags=["Admin - Fiscal Rules"])
 app.include_router(admin.router, prefix="/api") # Prefixo já incluído no router (/admin)
 app.include_router(users.router, prefix="/api") # Prefixo já incluído (/users)
 

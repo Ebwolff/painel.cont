@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, ShieldCheck, Download, Calendar, ArrowRight, Wallet, AlertCircle } from 'lucide-react';
+import { TrendingUp, ShieldCheck, Download, Calendar, ArrowRight, Wallet, AlertCircle, Lock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { api } from '../services/api';
+import { useFeatures } from '../hooks/useFeatures';
+import { useNavigate } from 'react-router-dom';
 
 export function RelatorioValor() {
+    const navigate = useNavigate();
     const [roiData, setRoiData] = useState<any>(null);
     const [intelData, setIntelData] = useState<any>(null);
+    const [simulation, setSimulation] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const { hasFeature, tier } = useFeatures();
 
     const [companies, setCompanies] = useState<any[]>([]);
     const [selectedEmpresa, setSelectedEmpresa] = useState<string>('');
@@ -33,16 +38,19 @@ export function RelatorioValor() {
             const suffix = empresaId ? `?empresa_id=${empresaId}` : '';
             console.log(`Fetching RelatorioValor data for ${empresaId || 'all'}...`);
 
-            const [roiDataRes, intelDataRes] = await Promise.all([
+            const [roiDataRes, intelDataRes, simulationRes] = await Promise.all([
                 api.get(`/roi/summary${suffix}`),
-                api.get(`/roi/strategic-intel${suffix}`)
+                api.get(`/roi/strategic-intel${suffix}`),
+                hasFeature('tax_reform_simulator') ? api.get(`/simulation/reform-impact${suffix}`) : Promise.resolve(null)
             ]);
 
             console.log("ROI Res:", roiDataRes);
             console.log("Intel Res:", intelDataRes);
+            console.log("Simulation Res:", simulationRes);
 
             setRoiData(roiDataRes);
             setIntelData(intelDataRes);
+            setSimulation(simulationRes);
         } catch (error) {
             console.error("Failed to fetch data", error);
         } finally {
@@ -67,6 +75,8 @@ export function RelatorioValor() {
     if (loading) return <div className="p-8 text-white animate-pulse">Gerando inteligência estratégica...</div>;
 
     const totalFormatado = (roiData?.total_creditos_identificados || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const recuperacaoFormatada = (roiData?.creditos_recuperacao || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const transicaoFormatada = (roiData?.creditos_transicao || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const economiaFormatada = (roiData?.economia_estimada || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const glosaFormatada = (roiData?.potencial_glosa || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -149,9 +159,15 @@ export function RelatorioValor() {
                         </p>
 
                         <div className="flex flex-wrap gap-4 mt-8">
+                            <div className="bg-blue-500/10 rounded-lg px-4 py-3 border border-blue-500/20 shadow-lg shadow-blue-500/5">
+                                <p className="text-[10px] text-blue-400 print:text-blue-600 uppercase font-black mb-1">Recuperação Tributária</p>
+                                <p className="text-xl font-black text-white print:text-black">{recuperacaoFormatada}</p>
+                                <p className="text-[9px] text-blue-300 italic">Créditos Monofásicos Identificados</p>
+                            </div>
                             <div className="bg-white/5 rounded-lg px-4 py-3 border border-white/5 print:bg-gray-50 print:border-gray-200">
                                 <p className="text-[10px] text-end-text-sec print:text-gray-500 uppercase mb-1">Créditos de Transição</p>
-                                <p className="text-xl font-bold text-white print:text-black">{totalFormatado}</p>
+                                <p className="text-xl font-bold text-white print:text-black">{transicaoFormatada}</p>
+                                <p className="text-[9px] text-end-text-sec italic">Projeção CBS/IBS 1%</p>
                             </div>
                             <div className="bg-white/5 rounded-lg px-4 py-3 border border-white/5 print:bg-gray-50 print:border-gray-200">
                                 <p className="text-[10px] text-end-text-sec print:text-gray-500 uppercase mb-1">Risco Evitado</p>
@@ -236,6 +252,51 @@ export function RelatorioValor() {
                 </div>
             </div>
 
+            {/* Tax Reform Simulator Section */}
+            {hasFeature('tax_reform_simulator') && simulation && (
+                <div className="bg-end-card border border-end-border rounded-xl p-8 print:border-gray-300">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                        <div>
+                            <h4 className="text-xl font-black text-white print:text-black mb-2 uppercase italic tracking-tighter">Simulador de Reforma Tributária</h4>
+                            <p className="text-end-text-sec text-xs">Projeção baseada no faturamento real dos últimos {simulation.periodo_dias} dias: <span className="text-white font-bold">{simulation.total_faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
+                        </div>
+                        <div className="bg-end-success/10 border border-end-success/20 rounded-lg p-3">
+                            <p className="text-[10px] font-bold text-end-success uppercase mb-1">Economia em 2026</p>
+                            <p className="text-xl font-black text-end-success tracking-tighter">
+                                + {simulation.economia_transicao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {Object.entries(simulation.cenarios).map(([key, cen]: [string, any]) => (
+                            <div key={key} className={cn(
+                                "p-6 rounded-xl border transition-all",
+                                key === 'transicao_2026'
+                                    ? "bg-end-accent/5 border-end-accent/30 ring-1 ring-end-accent/20"
+                                    : "bg-white/[0.02] border-white/5"
+                            )}>
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">{cen.nome}</p>
+                                    <span className="bg-white/10 text-white text-[9px] px-2 py-0.5 rounded font-bold">{cen.aliquota_media.toFixed(2)}%</span>
+                                </div>
+                                <p className="text-2xl font-black text-white tracking-tighter mb-1">
+                                    {cen.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                                <p className="text-[10px] text-end-text-sec italic">Estimativa de carga</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 p-4 bg-end-error/5 border border-end-error/10 rounded-lg flex items-center gap-4">
+                        <AlertCircle size={24} className="text-end-error shrink-0" />
+                        <p className="text-xs text-end-text-sec">
+                            <strong className="text-end-error">Atenção Estratégica:</strong> Embora a transição de 2026 reduza a carga imediata via IBS/CBS (1%), a projeção plena indica um aumento de <span className="text-white font-bold">{simulation.impacto_full.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>. É vital manter o monitoramento para otimizar créditos agora.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Evolução Gráfica (Print Only version of the chart) */}
             <div className="hidden print:block bg-white border border-gray-300 rounded-xl p-8">
                 <h4 className="text-sm font-bold text-black uppercase mb-6 tracking-widest">Histórico de Exposição Fiscal (6 Meses)</h4>
@@ -266,7 +327,7 @@ export function RelatorioValor() {
     );
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-12 print:p-0 print:space-y-6">
+        <div className="space-y-8 animate-in fade-in duration-500 pb-12 print:p-0 print:space-y-6 relative min-h-[600px]">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
                 <div>
                     <h2 className="text-3xl font-bold text-white mb-2">Relatório de Valor Realizado</h2>
@@ -346,8 +407,29 @@ export function RelatorioValor() {
 
             {renderContent()}
 
+            {/* Premium Block Overlay */}
+            {!hasFeature('roi_summary') && (
+                <div className="absolute inset-0 z-40 bg-end-bg/60 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center">
+                    <div className="bg-end-card border border-end-accent/30 p-12 rounded-2xl max-w-lg shadow-2xl shadow-end-accent/10">
+                        <div className="h-20 w-20 bg-end-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-end-accent">
+                            <TrendingUp size={40} />
+                        </div>
+                        <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Recurso de Alto Valor</h3>
+                        <p className="text-end-text-sec text-lg mb-8">
+                            A análise estratégica de ROI e Inteligência de Negócio está disponível exclusivamente nos planos **Monitor Profissional** e **Inteligência Corporativa**.
+                        </p>
+                        <button
+                            onClick={() => navigate('/planos')}
+                            className="bg-end-accent text-black px-12 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform shadow-lg shadow-end-accent/20"
+                        >
+                            FAZER UPGRADE AGORA
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Action Footer */}
-            {!isPresentationMode && (
+            {!isPresentationMode && hasFeature('roi_summary') && (
                 <div className="bg-end-accent rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 print:bg-end-accent print:rounded-xl">
                     <div className="text-black">
                         <h4 className="text-2xl font-black italic tracking-tighter print:text-black">SUA CONTABILIDADE É UM INVESTIMENTO</h4>

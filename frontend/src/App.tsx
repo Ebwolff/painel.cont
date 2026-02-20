@@ -11,9 +11,11 @@ import { Alertas } from './pages/Alertas';
 import { Empresas } from './pages/Empresas';
 import { Login } from './pages/Login';
 import { RelatorioValor } from './pages/RelatorioValor';
+import { Pricing } from './pages/Pricing';
 
 import { TenantsList } from './pages/admin/TenantsList';
 import { UsersList } from './pages/admin/UsersList';
+import { RegrasFiscais } from './pages/admin/RegrasFiscais';
 import { Users } from './pages/Users';
 import { ClientDashboard } from './pages/client/ClientDashboard';
 
@@ -69,6 +71,7 @@ function App() {
                         <Route path="alertas" element={<Alertas />} />
                         <Route path="empresas" element={<Empresas />} />
                         <Route path="users" element={<Users />} />
+                        <Route path="planos" element={<Pricing />} />
                     </Route>
 
                     {/* Admin Routes (Super Admin Only) */}
@@ -80,6 +83,7 @@ function App() {
                         <Route index element={<AdminDashboard />} />
                         <Route path="tenants" element={<TenantsList />} />
                         <Route path="users" element={<UsersList />} />
+                        <Route path="rules" element={<RegrasFiscais />} />
                     </Route>
 
                     {/* Client Routes */}

@@ -5,7 +5,7 @@
 
 DO $$
 DECLARE
-    target_email TEXT := 'seu@email.com'; -- <--- COLOQUE SEU EMAIL AQUI
+    target_email TEXT := 'eberscaow@gmail.com'; -- <--- COLOQUE SEU EMAIL AQUI
     target_user_id UUID;
 BEGIN
     -- Buscar ID do usuário
