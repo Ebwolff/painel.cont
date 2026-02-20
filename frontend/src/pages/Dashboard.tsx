@@ -38,30 +38,40 @@ export function Dashboard() {
         async function fetchMetrics() {
             try {
                 console.log("Fetching dashboard metrics...");
-                const [metricsData, roiData, alertsData, anomalyData] = await Promise.all([
-                    api.get('/dashboard/current-company'),
-                    api.get('/roi/summary'),
-                    api.get('/alerts'),
-                    hasFeature('ai_anomaly_detection') ? api.get('/anomalies/detect') : Promise.resolve({ anomalies: [] })
+                const [metricsData, roiDataRes, alertsDataRes, anomalyDataRes] = await Promise.all([
+                    api.get('/dashboard/current-company').catch(e => ({ error: true, message: e.message })),
+                    api.get('/roi/summary').catch(e => ({ error: true })),
+                    api.get('/alerts').catch(e => []),
+                    hasFeature('ai_anomaly_detection') ? api.get('/anomalies/detect').catch(e => ({ anomalies: [] })) : Promise.resolve({ anomalies: [] })
                 ]);
 
                 console.log("Metrics received:", metricsData);
-                console.log("ROI received:", roiData);
-                console.log("Alerts received:", alertsData);
 
-                setMetrics(metricsData);
-                setRoiData(roiData);
-                setAlerts(alertsData.slice(0, 5));
-                setAnomalies(anomalyData.anomalies || []);
+                // Defensive check for metrics
+                if (metricsData && !metricsData.error) {
+                    setMetrics(metricsData);
+                }
+
+                // Defensive check for ROI
+                if (roiDataRes && !roiDataRes.error) {
+                    setRoiData(roiDataRes);
+                }
+
+                // Defensive check for Alerts - Support both array directly or {data: []}
+                const rawAlerts = Array.isArray(alertsDataRes) ? alertsDataRes : (alertsDataRes?.data || []);
+                setAlerts(rawAlerts.slice(0, 5));
+
+                // Defensive check for Anomalies
+                setAnomalies(Array.isArray(anomalyDataRes?.anomalies) ? anomalyDataRes.anomalies : []);
             } catch (error: any) {
-                console.error("Failed to fetch dashboard data", error);
-                setError(error.message || "Erro desconhecido");
+                console.error("Critical failure in dashboard data fetch", error);
+                setError(error.message || "Erro ao carregar dados do painel");
             } finally {
                 setLoading(false);
             }
         }
         fetchMetrics();
-    }, []);
+    }, [hasFeature]);
 
     if (loading) {
         return (
@@ -213,9 +223,9 @@ export function Dashboard() {
                                         alert.tipo === 'fiscal' ? "text-end-error" : "text-end-warning"
                                     )} />
                                     <div>
-                                        <div className="text-sm font-medium text-white">{alert.descricao}</div>
+                                        <div className="text-sm font-medium text-white">{alert.descricao || alert.mensagem || 'Alerta de Conformidade'}</div>
                                         <div className="text-xs text-end-text-sec">
-                                            {alert.empresa_razao_social || 'Escritório'} • {new Date(alert.created_at).toLocaleDateString('pt-BR')}
+                                            {alert.empresa_razao_social || 'Escritório'} • {alert.created_at ? new Date(alert.created_at).toLocaleDateString('pt-BR') : 'Data Indisponível'}
                                         </div>
                                     </div>
                                 </div>
