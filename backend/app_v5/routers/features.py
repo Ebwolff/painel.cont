@@ -28,12 +28,21 @@ def get_user_features(user: dict = Depends(get_current_user)):
         if not tenant_id:
              return {"tier": "starter", "features": TIER_FEATURES["starter"]}
              
-        tenant_res = admin_client.table("tenants").select("plano").eq("id", tenant_id).single().execute()
+        tenant_res = admin_client.table("tenants").select("plano, limite_empresas").eq("id", tenant_id).single().execute()
         plan = tenant_res.data.get("plano", "starter") if tenant_res.data else "starter"
+        limite = tenant_res.data.get("limite_empresas", 5) if tenant_res.data else 5
+        
+        # 2. Obter uso atual
+        usage_res = admin_client.table("empresas").select("id", count="exact").eq("tenant_id", tenant_id).execute()
+        uso_atual = usage_res.count if usage_res.count is not None else 0
         
         return {
             "tier": plan,
-            "features": TIER_FEATURES.get(plan, TIER_FEATURES["starter"])
+            "features": TIER_FEATURES.get(plan, TIER_FEATURES["starter"]),
+            "usage": {
+                "companies_limit": limite,
+                "companies_count": uso_atual
+            }
         }
     except Exception as e:
         print(f"Erro ao buscar features: {e}")

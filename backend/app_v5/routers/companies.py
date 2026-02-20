@@ -62,6 +62,19 @@ def create_company(company: CompanyCreate, user: dict = Depends(get_current_user
         if not tenant_id:
             raise HTTPException(status_code=400, detail="Usuário sem Tenant vinculado.")
 
+        # 2. Validar limite de empresas do plano
+        tenant_res = admin_client.table("tenants").select("limite_empresas").eq("id", tenant_id).single().execute()
+        limite = tenant_res.data.get("limite_empresas", 5) if tenant_res.data else 5
+        
+        usage_res = admin_client.table("empresas").select("id", count="exact").eq("tenant_id", tenant_id).execute()
+        uso_atual = usage_res.count if usage_res.count is not None else 0
+        
+        if uso_atual >= limite:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Limite de empresas atingido ({uso_atual}/{limite}). Faça upgrade para cadastrar novos CNPJs/CPFs."
+            )
+
         # Atribuir tenant_id de forma SEGURA no backend
         company_data["tenant_id"] = tenant_id
 

@@ -7,30 +7,33 @@ import { api } from '../services/api';
 const plans = [
     {
         id: 'starter',
-        name: 'Monitor Inicial',
-        price: 'R$ 499',
-        description: 'Ideal para pequenos escritórios iniciando na conformidade digital.',
+        name: 'Monitor Starter',
+        price: 'R$ 190',
+        setup: 'R$ 1.200',
+        description: 'Ideal para escritórios operando com até 5 CNPJs/CPFs.',
         features: [
+            'Taxa de Setup Única: R$ 1.200',
+            'Até 5 Empresas monitoradas',
             'Monitoramento de Notas (Manual)',
             'Auditoria Básica de CBS/IBS',
-            'Painel de Conformidade',
-            'Suporte via Email'
+            'Painel de Conformidade'
         ],
         icon: ShieldCheck,
         color: 'text-gray-400',
         bg: 'bg-white/5',
-        button: 'Plano Atual'
+        button: 'Fazer Upgrade'
     },
     {
         id: 'pro',
         name: 'Monitor Profissional',
-        price: 'R$ 997',
-        description: 'Automação total e visibilidade de ROI para escritórios em crescimento.',
+        price: 'R$ 590',
+        setup: 'R$ 1.200',
+        description: 'Para escritórios em crescimento com até 15 empresas.',
         features: [
-            'Tudo do Starter',
+            'Taxa de Setup Única: R$ 1.200',
+            'Até 15 Empresas monitoradas',
             'Sincronização Automática SEFAZ',
             'Calculadora de ROI Estratégico',
-            'Relatórios de Valor Mensais',
             'Suporte Prioritário'
         ],
         highlight: true,
@@ -41,15 +44,16 @@ const plans = [
     },
     {
         id: 'enterprise',
-        name: 'Inteligência Corporativa',
-        price: 'R$ 2.490',
-        description: 'A inteligência definitiva para grandes operações e consultoria estratégica.',
+        name: 'Inteligência Premium',
+        price: 'R$ 1.290',
+        setup: 'R$ 1.200',
+        description: 'Capacidade para 50 empresas e inteligência preditiva.',
         features: [
-            'Tudo do Pro',
+            'Taxa de Setup Única: R$ 1.200',
+            'Até 50 Empresas monitoradas',
             'Simulador de Reforma (IBS/CBS 2026)',
             'Detecção de Anomalias por IA',
-            'Relatórios Executivos Personalizados',
-            'Gerente de Conta Dedicado'
+            'Relatórios Executivos'
         ],
         icon: Sparkles,
         color: 'text-end-accent',
@@ -119,9 +123,16 @@ export function Pricing() {
                             <p className="text-sm text-end-text-sec mt-2">{plan.description}</p>
                         </div>
 
-                        <div className="mb-8 flex items-baseline gap-1">
-                            <span className="text-4xl font-black text-white">{plan.price}</span>
-                            <span className="text-end-text-sec text-sm font-medium">/mês</span>
+                        <div className="mb-8 items-baseline gap-1">
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-4xl font-black text-white">{plan.price}</span>
+                                <span className="text-end-text-sec text-sm font-medium">/mês</span>
+                            </div>
+                            {plan.setup && (
+                                <div className="text-[10px] text-end-accent font-bold uppercase mt-1">
+                                    + {plan.setup} Setup Único
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-4 flex-1 mb-10">
