@@ -18,7 +18,8 @@ interface DashboardMetrics {
 interface Alert {
     id: string;
     tipo: string;
-    descricao: string;
+    mensagem?: string;
+    descricao?: string;
     created_at: string;
     empresa_razao_social?: string;
 }
