@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../services/api';
 
 export interface FeatureLayout {
@@ -11,32 +11,36 @@ export function useFeatures() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
         async function loadFeatures() {
             try {
                 const data = await api.get('/features/my-features');
-                setFeatureData(data);
+                if (isMounted) setFeatureData(data);
             } catch (error) {
                 console.error("Failed to load features", error);
                 // Fallback to starter
-                setFeatureData({ tier: 'starter', features: ['basic_monitor', 'upload_manual'] });
+                if (isMounted) setFeatureData({ tier: 'starter', features: ['basic_monitor', 'upload_manual'] });
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         }
         loadFeatures();
+        return () => { isMounted = false; };
     }, []);
 
-    const hasFeature = (featureName: string) => {
+    const hasFeature = useCallback((featureName: string) => {
         return featureData?.features.includes(featureName) || false;
-    };
+    }, [featureData]);
 
-    const isTier = (tierName: string) => {
+    const isTier = useCallback((tierName: string) => {
         return featureData?.tier === tierName;
-    };
+    }, [featureData]);
+
+    const memoizedFeatures = useMemo(() => featureData?.features || [], [featureData]);
 
     return {
         tier: featureData?.tier || 'starter',
-        features: featureData?.features || [],
+        features: memoizedFeatures,
         hasFeature,
         isTier,
         loading
