@@ -68,7 +68,7 @@ def get_alerts(
 
         # Usar ADMIN client com filtro de tenant manual
         admin_client = supabase_service.get_service_client()
-        query = admin_client.table("alertas_conformidade").select("*, notas_fiscais(numero, chave_acesso, destinatario_nome, empresas(razao_social))").eq("tenant_id", tenant_id)
+        query = admin_client.table("alertas_conformidade").select("*").eq("tenant_id", tenant_id)
         
         if empresa_id:
             query = query.eq("empresa_id", empresa_id)
@@ -76,7 +76,38 @@ def get_alerts(
             query = query.eq("resolvido", status == "resolvido")
             
         res = query.order("created_at", desc=True).limit(limit).execute()
-        return res.data
+        alertas = res.data or []
+        
+        # Join manual com notas_fiscais (PostgREST não suporta join em tabelas particionadas sem FK)
+        if alertas:
+            nota_ids = list(set(a.get("nota_fiscal_id") for a in alertas if a.get("nota_fiscal_id")))
+            if nota_ids:
+                try:
+                    notas_res = admin_client.table("notas_fiscais").select("id, numero, chave_acesso, destinatario_nome, empresa_id").in_("id", nota_ids).execute()
+                    notas_map = {n["id"]: n for n in (notas_res.data or [])}
+                    
+                    # Buscar empresas associadas
+                    empresa_ids = list(set(n.get("empresa_id") for n in notas_map.values() if n.get("empresa_id")))
+                    empresas_map = {}
+                    if empresa_ids:
+                        emp_res = admin_client.table("empresas").select("id, razao_social").in_("id", empresa_ids).execute()
+                        empresas_map = {e["id"]: e for e in (emp_res.data or [])}
+                    
+                    # Enriquecer alertas com dados das notas e empresas
+                    for alerta in alertas:
+                        nota = notas_map.get(alerta.get("nota_fiscal_id"))
+                        if nota:
+                            empresa = empresas_map.get(nota.get("empresa_id"))
+                            alerta["notas_fiscais"] = {
+                                "numero": nota.get("numero"),
+                                "chave_acesso": nota.get("chave_acesso"),
+                                "destinatario_nome": nota.get("destinatario_nome"),
+                                "empresas": empresa
+                            }
+                except Exception as join_err:
+                    logger.warning(f"ALERTS: Join manual falhou: {join_err}")
+        
+        return alertas
     except Exception as e:
         logger.error(f"ALERTS: Erro ao buscar lista: {e}")
         return {"error": str(e), "details": "Falha na consulta de alertas"}
