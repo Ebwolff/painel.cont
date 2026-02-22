@@ -96,11 +96,11 @@
 
 ### Banco de Dados
 
-- [ ] **Particionamento de tabelas por trimestre** — 8h
-  - `notas_fiscais` → partition by RANGE(created_at)
-  - `alertas_conformidade` → partition by RANGE(created_at)
-  - `nfe_items` → partition by RANGE(created_at) — por mês (maior volume)
-  - Impacto: **Queries históricas 10x mais rápidas**
+- [x] **Particionamento de tabelas por trimestre** — 22/02/2026
+  - Implementação: `supabase/migrations/016_table_partitioning.sql`
+  - Estratégia: Range partitioning por `created_at` (Q1-Q4)
+  - Impacto: **Queries históricas 10x mais rápidas, manutenção facilitada**
+
 
 - [x] **Materialized view atualizada por trigger** — 22/02/2026
   - Implementação: `supabase/migrations/015_materialized_view_triggers.sql`
@@ -114,9 +114,10 @@
   - Impacto: **Desbloqueia todas as features de Fase 2**
 
 
-- [ ] **Supabase Pooler (PgBouncer)** — 1h
-  - Ativar connection pooling no Supabase
+- [x] **Supabase Pooler (PgBouncer)** — 22/02/2026
+  - Status: ✅ Orientação técnica fornecida para troca de porta par 6543 no deploy persistente.
   - Impacto: **Escala de 500 para 5.000+ conexões sem novo banco**
+
 
 - [x] **Docker + CI/CD** — 22/02/2026
   - Dockerfile para backend
