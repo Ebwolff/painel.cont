@@ -48,7 +48,7 @@ async def upload_xml(
         if not tenant_id:
             raise HTTPException(status_code=403, detail="Usuário sem tenant vinculado.")
 
-        content = await file.read()
+        # content já foi lido na linha 29 para validação de tamanho, reusando aqui.
         
         # 1. Parse
         nfe_data = parser_service.parse_nfe(content)

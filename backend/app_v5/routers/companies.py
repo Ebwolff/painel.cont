@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -25,8 +29,9 @@ def get_companies(user: dict = Depends(get_current_user)):
         res = admin_client.table("empresas").select("*").eq("tenant_id", tenant_id).execute()
         return res.data
     except Exception as e:
-        print(f"Erro ao buscar empresas: {e}")
+        logger.error(f"COMPANIES: Erro ao buscar lista: {e}")
         return []
+
 
 from pydantic import BaseModel, Field
 
@@ -94,8 +99,9 @@ def create_company(company: CompanyCreate, user: dict = Depends(get_current_user
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error creating company: {e}")
+        logger.error(f"COMPANIES: Erro ao criar empresa: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao salvar empresa.")
+
 
 @router.delete("/{company_id}", summary="Exclui uma empresa")
 def delete_company(company_id: str, user: dict = Depends(get_current_user)):
@@ -132,5 +138,6 @@ def delete_company(company_id: str, user: dict = Depends(get_current_user)):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error deleting company: {e}")
+        logger.error(f"COMPANIES: Erro ao excluir empresa: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao excluir empresa.")
+

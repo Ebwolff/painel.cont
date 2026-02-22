@@ -3,6 +3,10 @@ from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
 import base64
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -67,5 +71,6 @@ async def upload_certificate(
         return {"message": "Certificado A1 configurado e criptografado com sucesso", "expires_at": expires_at}
         
     except Exception as e:
-        print(f"Erro Certificado: {e}")
+        logger.error(f"CERTIFICATES: Erro ao processar certificado: {e}")
         raise HTTPException(status_code=500, detail="Erro ao processar certificado.")
+

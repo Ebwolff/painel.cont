@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_user
 from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -32,5 +36,6 @@ def get_nfe_items(nota_id: str, user: dict = Depends(get_current_user)):
             
         return res.data or []
     except Exception as e:
-        print(f"Erro ao buscar itens da nota {nota_id}: {e}")
+        logger.error(f"ITEMS: Erro ao buscar detalhes da nota {nota_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao buscar detalhes da nota.")
+

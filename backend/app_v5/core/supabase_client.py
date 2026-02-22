@@ -29,7 +29,7 @@ class SupabaseService:
                 # Se o usuário colocou uma string comum, isso vai dar erro.
                 self.fernet = Fernet(key.encode())
             except Exception as e:
-                print(f"CRITICAL: MASTER_ENCRYPTION_KEY inválida (deve ser 32 bytes base64): {e}")
+                logger.error(f"CRITICAL: MASTER_ENCRYPTION_KEY inválida (deve ser 32 bytes base64): {e}")
                 self.fernet = None
 
     def encrypt_data(self, data: str) -> str:
@@ -62,7 +62,7 @@ class SupabaseService:
             }).execute()
         except Exception as e:
             # Log de auditoria não deve quebrar a aplicação, mas deve ser avisado
-            print(f"CRITICAL: Falha ao gravar log de auditoria: {e}")
+            logger.error(f"CRITICAL: Falha ao gravar log de auditoria: {e}")
 
     def _init_client(self):
         url: str = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_URL")

@@ -3,10 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 import logging
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from app_v5.services.external_sync import ExternalSyncService
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 logger = logging.getLogger(__name__)
+
+# Initialize Sentry
+sentry_dsn = os.environ.get("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
+    logger.info("SENTRY: Inicializado com sucesso.")
+
 
 # Load environment variables
 load_dotenv()
@@ -26,39 +38,20 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Scheduler Configuration
-scheduler = AsyncIOScheduler()
-
-async def scheduled_tax_sync():
-    """Tarefa periódica de sincronização fiscal."""
-    logger.info("CRON: Iniciando atualização automática semanal de alíquotas...")
+# Cron Sync Endpoint (Triggered by Vercel Cron)
+@app.get("/api/cron/sync-tax-rates")
+async def cron_tax_sync():
+    """Trigger manual da sincronização fiscal via Cron extern."""
+    logger.info("CRON: Iniciando atualização automática via endpoint...")
     try:
+        from app_v5.services.external_sync import ExternalSyncService
         sync_service = ExternalSyncService()
         result = await sync_service.sync_federal_rates()
-        logger.info(f"CRON: Sincronização automática concluída. Novas: {result['created']}, Atualizadas: {result['updated']}")
+        return {"status": "success", "result": result}
     except Exception as e:
-        logger.error(f"CRON: Falha na sincronização automática: {e}")
+        logger.error(f"CRON: Falha na sincronização: {e}")
+        return {"status": "error", "message": str(e)}
 
-@app.on_event("startup")
-async def startup_event():
-    # Agendar para toda Segunda-feira às 03:00 AM
-    scheduler.add_job(
-        scheduled_tax_sync, 
-        "cron", 
-        day_of_week="mon", 
-        hour=3, 
-        minute=0,
-        id="weekly_tax_sync",
-        replace_existing=True
-    )
-    # scheduler.add_job(scheduled_tax_sync, "interval", minutes=1) # Para teste rápido se necessário
-    scheduler.start()
-    logger.info("SCHEDULER: Agendador de tarefas iniciado (Sincronização Fiscal: Segunda às 03:00)")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    scheduler.shutdown()
-    logger.info("SCHEDULER: Agendador de tarefas finalizado.")
 
 # CORS Configuration
 # Em produção, deve ser estrito.

@@ -22,5 +22,11 @@
             "src": "backend/api.py",
             "use": "@vercel/python"
         }
+    ],
+    "crons": [
+        {
+            "path": "/api/cron/sync-tax-rates",
+            "schedule": "0 3 * * 1"
+        }
     ]
 }

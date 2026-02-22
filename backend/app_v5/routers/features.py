@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_user
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -45,8 +49,9 @@ def get_user_features(user: dict = Depends(get_current_user)):
             }
         }
     except Exception as e:
-        print(f"Erro ao buscar features: {e}")
+        logger.error(f"FEATURES: Erro ao buscar recursos: {e}")
         return {"tier": "starter", "features": TIER_FEATURES["starter"]}
+
 
 @router.post("/set-plan", summary="DEBUG: Alterar plano do tenant (Apenas para demonstração)")
 def set_tenant_plan(plan: str = Query(...), user: dict = Depends(get_current_user)):
@@ -73,8 +78,9 @@ def set_tenant_plan(plan: str = Query(...), user: dict = Depends(get_current_use
         
         return {"status": "success", "new_plan": plan}
     except Exception as e:
-        print(f"Erro ao trocar plano: {e}")
+        logger.error(f"FEATURES: Erro ao trocar plano: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/request-upgrade", summary="Solicitar upgrade de plano")
 def request_upgrade(plan: str = Query(...), user: dict = Depends(get_current_user)):
@@ -104,5 +110,6 @@ def request_upgrade(plan: str = Query(...), user: dict = Depends(get_current_use
         
         return {"status": "requested", "data": res.data[0] if res.data else None}
     except Exception as e:
-        print(f"Erro ao solicitar upgrade: {e}")
+        logger.error(f"FEATURES: Erro ao solicitar upgrade: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+

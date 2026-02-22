@@ -2,6 +2,10 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
 from typing import List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -36,8 +40,9 @@ def get_alerts_summary(user: dict = Depends(get_current_user)):
             "total_pendentes": len(res.data or [])
         }
     except Exception as e:
-        print(f"Erro summary alertas: {e}")
+        logger.error(f"ALERTS: Erro no summary: {e}")
         return {"error": str(e), "counts": {}, "total_pendentes": 0}
+
 
 @router.get("/", summary="Lista todos os alertas de conformidade")
 def get_alerts(
@@ -73,8 +78,9 @@ def get_alerts(
         res = query.order("created_at", desc=True).limit(limit).execute()
         return res.data
     except Exception as e:
-        print(f"Erro ao buscar alertas: {e}")
+        logger.error(f"ALERTS: Erro ao buscar lista: {e}")
         return {"error": str(e), "details": "Falha na consulta de alertas"}
+
 
 @router.get("/debug", summary="Diagnóstico de Alertas")
 def debug_alerts(user: dict = Depends(get_current_user)):

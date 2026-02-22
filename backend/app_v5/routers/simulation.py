@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_user
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -79,5 +83,6 @@ def get_reform_impact(empresa_id: str = None, user: dict = Depends(get_current_u
         }
 
     except Exception as e:
-        print(f"Erro no Simulador: {e}")
+        logger.error(f"SIMULATION: Erro no impacto da reforma: {e}")
         raise HTTPException(status_code=500, detail="Erro ao processar simulação estratégica.")
+

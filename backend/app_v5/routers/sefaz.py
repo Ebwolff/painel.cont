@@ -1,7 +1,10 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from app_v5.services.sefaz_sync import SefazSyncService
-from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 sync_service = SefazSyncService()
@@ -30,8 +33,9 @@ async def trigger_sync(
         
         return {"message": "Sincronização iniciada em segundo plano."}
     except Exception as e:
-        print(f"Erro ao disparar sync: {e}")
+        logger.error(f"SEFAZ: Erro ao disparar sync: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/test-sync/{empresa_id}", summary="Executa sync mock síncrono para teste")
 async def test_sync(
@@ -59,8 +63,9 @@ async def test_sync(
             "result": result
         }
     except Exception as e:
-        print(f"Erro no test-sync: {e}")
+        logger.error(f"SEFAZ: Erro no test-sync: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/status/{empresa_id}")
 async def get_sync_status(empresa_id: str):

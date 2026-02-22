@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_user
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -54,5 +58,6 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
             "anomalies": results
         }
     except Exception as e:
-        print(f"Erro na análise de anomalias: {e}")
+        logger.error(f"ANOMALIES: Erro na análise: {e}")
         return {"status": "error", "message": str(e)}
+

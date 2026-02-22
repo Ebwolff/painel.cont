@@ -7,7 +7,7 @@ supabase_service = SupabaseService()
 
 @router.get("/current-company", summary="Métricas para o Termômetro de Risco")
 def get_dashboard_metrics(user: dict = Depends(get_current_user)):
-    print("DEBUG DASHBOARD: Iniciando request...")
+    logger.info("DASHBOARD: Iniciando fetching de métricas...")
     """
     Retorna os KPIs principais para o dashboard da empresa buscando no Supabase.
     Requer autenticação para identificar o tenant do usuário.
@@ -28,7 +28,7 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
         empresa_id = profile.get('empresa_id')
         tenant_id = profile.get('tenant_id')
         
-        print(f"DEBUG DASHBOARD: User={user_id}, Tenant={tenant_id}, Role={role}")
+        logger.info(f"DASHBOARD: User={user_id}, Tenant={tenant_id}, Role={role}")
         
         # Preparar Query Base (Últimos 30 dias)
         from datetime import datetime, timedelta
@@ -103,7 +103,7 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
                 "status": "seguro" if risco_score <= 15 else "atencao" if risco_score <= 40 else "critico"
             }
         except Exception as query_error:
-            print(f"Erro na execução da query do dashboard: {query_error}")
+            logger.error(f"DASHBOARD: Erro na execução das queries SQL: {query_error}")
             return {
                 "empresa_id": empresa_id if role == 'monitor' else tenant_id, 
                 "risco_score": 0,
@@ -114,7 +114,7 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
                 "status": "seguro"
             }
     except Exception as e:
-        print(f"Erro ao buscar métricas (Geral): {e}")
+        logger.error(f"DASHBOARD: Erro fatal ao buscar métricas: {e}")
         # Retornamos 200 com dados zerados em vez de 500 para não quebrar o frontend
         return {
             "empresa_id": None, 

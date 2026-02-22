@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
-from typing import Dict, List
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -88,8 +91,9 @@ async def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_c
             "tendencia_exposicao": tendencia_exposicao
         }
     except Exception as e:
-        print(f"Erro Intel: {e}")
+        logger.error(f"ROI: Erro Strategic Intel: {e}")
         return {"error": str(e)}
+
 
 @router.get("/summary", summary="Relatório de ROI e Valor Realizado")
 async def get_roi_summary(empresa_id: str = None, user: dict = Depends(get_current_user)):
@@ -151,5 +155,6 @@ async def get_roi_summary(empresa_id: str = None, user: dict = Depends(get_curre
             "roi_ratio": (total_recuperacao + total_transicao + economia_realizada) / 499.00 if (total_recuperacao + total_transicao + economia_realizada) > 0 else 0
         }
     except Exception as e:
-        print(f"Erro ROI: {e}")
+        logger.error(f"ROI: Erro summary: {e}")
         return {"error": str(e)}
+
