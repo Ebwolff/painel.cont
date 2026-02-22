@@ -37,15 +37,14 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
         
         logger.info(f"DASHBOARD: User={user_id}, Tenant={tenant_id}, Role={role}")
 
-        # 3. Verificar Cache Redis
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-        r = redis.Redis.from_url(redis_url, decode_responses=True)
-        cache_key = f"dash:stats:{tenant_id}:{empresa_id or 'all'}"
-        
-        cached_data = r.get(cache_key)
-        if cached_data:
-            logger.info(f"DASHBOARD: Retornando dados via Cache Redis para {tenant_id}")
-            return json.loads(cached_data)
+        # 3. Verificar Cache Redis (Falha Silenciosa)
+        try:
+            cached_data = r.get(cache_key)
+            if cached_data:
+                logger.info(f"DASHBOARD: Retornando dados via Cache Redis para {tenant_id}")
+                return json.loads(cached_data)
+        except Exception as redis_err:
+            logger.warning(f"DASHBOARD CACHE: Redis indisponível. {redis_err}")
         
         # Preparar Query Base (Últimos 30 dias)
         from datetime import datetime, timedelta

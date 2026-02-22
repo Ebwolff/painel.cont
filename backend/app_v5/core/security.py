@@ -43,10 +43,13 @@ async def get_current_user(token: str = Depends(get_current_token)):
     cache_key = f"auth_token:{token_hash}"
 
     try:
-        # 2. Tentar Cache Redis
-        cached_user = r_auth.get(cache_key)
-        if cached_user:
-            return json.loads(cached_user)
+        # 2. Tentar Cache Redis (Falha Silenciosa)
+        try:
+            cached_user = r_auth.get(cache_key)
+            if cached_user:
+                return json.loads(cached_user)
+        except Exception as redis_err:
+            logger.warning(f"AUTH CACHE: Redis indisponível, recorrendo ao banco. {redis_err}")
 
         # 3. Se não houver cache, buscar no Supabase
         supabase = SupabaseService().get_client_for_user(token)
@@ -61,8 +64,11 @@ async def get_current_user(token: str = Depends(get_current_token)):
             "access_token": token
         }
 
-        # 4. Salvar no Cache por 5 minutos (300s)
-        r_auth.setex(cache_key, 300, json.dumps(user_info))
+        # 4. Salvar no Cache por 5 minutos (Falha Silenciosa)
+        try:
+            r_auth.setex(cache_key, 300, json.dumps(user_info))
+        except Exception as redis_err:
+            pass # Apenas ignorar se falhar ao salvar
         
         return user_info
 

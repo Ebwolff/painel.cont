@@ -34,20 +34,26 @@ class RuleEngineService:
 
         try:
             # 1. Tentar ler do Redis
-            cached = self.redis.get(self.cache_key)
-            if cached:
-                self._rules_cache = json.loads(cached)
-                self._cache_loaded = True
-                logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via Redis.")
-                return
+            try:
+                cached = self.redis.get(self.cache_key)
+                if cached:
+                    self._rules_cache = json.loads(cached)
+                    self._cache_loaded = True
+                    logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via Redis.")
+                    return
+            except Exception as redis_err:
+                logger.warning(f"RuleEngine Cache: Redis inacessível. {redis_err}")
 
             # 2. Se não houver, carregar do Supabase
             client = self.supabase.get_service_client()
             res = client.table("fiscal_rules").select("*").eq("active", True).execute()
             self._rules_cache = res.data or []
             
-            # 3. Cache no Redis por 1 hora
-            self.redis.setex(self.cache_key, 3600, json.dumps(self._rules_cache))
+            # 3. Cache no Redis por 1 hora (Falha Silenciosa)
+            try:
+                self.redis.setex(self.cache_key, 3600, json.dumps(self._rules_cache))
+            except:
+                pass
             
             self._cache_loaded = True
             logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via DB e cacheadas no Redis.")
@@ -57,7 +63,10 @@ class RuleEngineService:
 
     def invalidate_cache(self):
         """Força recarga global das regras limpando o Redis."""
-        self.redis.delete(self.cache_key)
+        try:
+            self.redis.delete(self.cache_key)
+        except:
+            pass
         self._cache_loaded = False
         self._rules_cache = []
 
