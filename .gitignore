@@ -25,6 +25,7 @@ out/
 # DB/Secrets
 *.sql
 !seed_*.sql
+!supabase/migrations/*.sql
 *.key
 *.cert
 *.pem
