@@ -27,6 +27,10 @@ export function Empresas() {
     const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
     const [certFile, setCertFile] = useState<File | null>(null);
     const [certPassword, setCertPassword] = useState('');
+    const [certAmbiente, setCertAmbiente] = useState<'producao' | 'homologacao'>('producao');
+    const [certUploadResult, setCertUploadResult] = useState<{ expires_at: string; dias_restantes: number; ambiente: string } | null>(null);
+    const [certUploadError, setCertUploadError] = useState<string | null>(null);
+    const [isUploadingCert, setIsUploadingCert] = useState(false);
 
     const formatCNPJ = (value: string) => {
         const digits = value.replace(/\D/g, '').slice(0, 14);
@@ -62,20 +66,33 @@ export function Empresas() {
         e.preventDefault();
         if (!selectedCompany || !certFile) return;
 
+        setIsUploadingCert(true);
+        setCertUploadError(null);
+        setCertUploadResult(null);
+
         const formData = new FormData();
         formData.append('file', certFile);
         formData.append('password', certPassword);
+        formData.append('ambiente', certAmbiente);
 
         try {
-            await api.upload(`/certificates/upload/${selectedCompany}`, formData);
-            alert("Certificado A1 configurado com sucesso!");
-            setIsCertModalOpen(false);
-            setCertFile(null);
-            setCertPassword('');
+            const result = await api.upload(`/certificates/upload/${selectedCompany}`, formData);
+            setCertUploadResult(result);
             fetchCompanies();
-        } catch (error) {
-            console.error("Cert upload failed", error);
+        } catch (error: any) {
+            setCertUploadError(error.message || 'Erro ao enviar certificado.');
+        } finally {
+            setIsUploadingCert(false);
         }
+    };
+
+    const closeCertModal = () => {
+        setIsCertModalOpen(false);
+        setCertFile(null);
+        setCertPassword('');
+        setCertAmbiente('producao');
+        setCertUploadResult(null);
+        setCertUploadError(null);
     };
 
     const handleCreateCompany = async (e: React.FormEvent) => {
@@ -213,47 +230,89 @@ export function Empresas() {
             {isCertModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-sm rounded-xl p-8 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-2">Configurar Certificado A1</h3>
-                        <p className="text-xs text-end-text-sec mb-6">Necessário para busca automática na SEFAZ.</p>
+                        <h3 className="text-xl font-bold text-white mb-1">Certificado A1</h3>
+                        <p className="text-xs text-end-text-sec mb-6">Necessário para busca automática de NF-es na SEFAZ.</p>
 
-                        <form onSubmit={handleCertUpload} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Arquivo .PFX ou .P12</label>
-                                <input
-                                    type="file"
-                                    accept=".pfx,.p12"
-                                    onChange={e => setCertFile(e.target.files?.[0] || null)}
-                                    className="w-full bg-end-bg border border-end-border rounded p-2 text-white text-sm"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Senha do Certificado</label>
-                                <input
-                                    type="password"
-                                    value={certPassword}
-                                    onChange={e => setCertPassword(e.target.value)}
-                                    placeholder="Sua senha secreta"
-                                    className="w-full bg-end-bg border border-end-border rounded p-2 text-white outline-none focus:border-end-accent"
-                                    required
-                                />
-                            </div>
-                            <div className="flex gap-3 pt-4">
+                        {certUploadResult ? (
+                            <div className="space-y-4">
+                                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-center">
+                                    <ShieldCheck size={32} className="text-green-400 mx-auto mb-2" />
+                                    <p className="text-green-400 font-bold text-sm">Certificado configurado!</p>
+                                    <p className="text-xs text-end-text-sec mt-1">
+                                        Vence em: {new Date(certUploadResult.expires_at).toLocaleDateString('pt-BR')}
+                                        {' '}({certUploadResult.dias_restantes} dias)
+                                    </p>
+                                    <p className="text-xs text-end-text-sec">
+                                        Ambiente: <strong className="text-white">{certUploadResult.ambiente === 'producao' ? '🟢 Produção' : '🔵 Homologação'}</strong>
+                                    </p>
+                                </div>
                                 <button
-                                    type="button"
-                                    onClick={() => setIsCertModalOpen(false)}
-                                    className="flex-1 px-4 py-2 border border-end-border rounded text-end-text-sec hover:bg-white/5 transition-colors"
+                                    onClick={closeCertModal}
+                                    className="w-full py-3 bg-end-accent text-black font-bold rounded-xl hover:bg-end-accent/90 transition-colors"
                                 >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-end-accent text-black font-bold rounded hover:bg-end-accent/90 transition-colors"
-                                >
-                                    Configurar
+                                    Concluir
                                 </button>
                             </div>
-                        </form>
+                        ) : (
+                            <form onSubmit={handleCertUpload} className="space-y-4">
+                                {certUploadError && (
+                                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                                        <p className="text-red-400 text-xs font-bold">⚠️ {certUploadError}</p>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Arquivo .PFX ou .P12</label>
+                                    <input
+                                        type="file"
+                                        accept=".pfx,.p12"
+                                        onChange={e => setCertFile(e.target.files?.[0] || null)}
+                                        className="w-full bg-end-bg border border-end-border rounded p-2 text-white text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Senha do Certificado</label>
+                                    <input
+                                        type="password"
+                                        value={certPassword}
+                                        onChange={e => setCertPassword(e.target.value)}
+                                        placeholder="Senha gerada pela AC"
+                                        className="w-full bg-end-bg border border-end-border rounded p-2 text-white outline-none focus:border-end-accent"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Ambiente SEFAZ</label>
+                                    <select
+                                        value={certAmbiente}
+                                        onChange={e => setCertAmbiente(e.target.value as 'producao' | 'homologacao')}
+                                        className="w-full bg-end-bg border border-end-border rounded p-2 text-white outline-none focus:border-end-accent"
+                                    >
+                                        <option value="producao">🟢 Produção (real)</option>
+                                        <option value="homologacao">🔵 Homologação (teste)</option>
+                                    </select>
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={closeCertModal}
+                                        className="flex-1 px-4 py-2 border border-end-border rounded text-end-text-sec hover:bg-white/5 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isUploadingCert}
+                                        className={cn(
+                                            "flex-1 px-4 py-2 bg-end-accent text-black font-bold rounded hover:bg-end-accent/90 transition-colors flex items-center justify-center gap-2",
+                                            isUploadingCert && "opacity-50 cursor-wait"
+                                        )}
+                                    >
+                                        {isUploadingCert ? <><RefreshCw size={14} className="animate-spin" /> Validando...</> : 'Salvar Certificado'}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}
