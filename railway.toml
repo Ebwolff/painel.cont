@@ -1,6 +1,7 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "backend/Dockerfile"
+buildCommand = ""
 
 [deploy]
 startCommand = "uvicorn app_v5.main:app --host 0.0.0.0 --port $PORT"
@@ -8,10 +9,3 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-[[services]]
-name = "api"
-
-[[services]]
-name = "worker"
-startCommand = "celery -A app_v5.core.celery_app worker --loglevel=info --concurrency=2"
