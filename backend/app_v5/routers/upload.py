@@ -4,7 +4,10 @@ from app_v5.services.xml_parser import XMLParserService
 from app_v5.services.tax_validator import TaxValidatorService
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token
+from app_v5.worker import process_nfe_xml_async
+import base64
 import logging
+
 import os
 import traceback
 
@@ -50,21 +53,32 @@ async def upload_xml(
 
         # content já foi lido na linha 29 para validação de tamanho, reusando aqui.
         
-        # 1. Parse
-        nfe_data = parser_service.parse_nfe(content)
+        # 1. Verificação Síncrona de Duplicidade (Reduz carga na fila)
+        nfe_data_quick = parser_service.parse_nfe(content)
+        chave_acesso = nfe_data_quick.get("chave_acesso")
         
-        # 2. Validação Tributária
-        validation_result = validator_service.validate_taxes(nfe_data, empresa_id=empresa_id)
+        check_existing = user_client.table("notas_fiscais").select("id").eq("chave_acesso", chave_acesso).eq("tenant_id", tenant_id).execute()
+        if check_existing.data:
+            return {
+                "status": "already_processed",
+                "nota_id": check_existing.data[0]['id'],
+                "message": "Esta nota já foi enviada anteriormente."
+            }
+
+        # 2. Enviar para Fila Assíncrona (Celery)
+        # Convertemos para base64 para o broker
+        xml_b64 = base64.b64encode(content).decode('utf-8')
         
-        # 3. Persistência (Supabase)
-        nota_id = supabase_service.insert_nfe_result(nfe_data, validation_result, tenant_id=tenant_id, empresa_id=empresa_id)
+        task = process_nfe_xml_async.delay(xml_b64, tenant_id, empresa_id)
         
+        logger.info(f"UPLOAD: Nota enfileirada (Job ID: {task.id}) para tenant {tenant_id}")
+
         return {
-            "file": file.filename,
-            "parsed_data": nfe_data,
-            "validation": validation_result,
-            "nota_id": nota_id
+            "status": "enqueued",
+            "job_id": task.id,
+            "message": "Arquivo recebido. O processamento iniciou em segundo plano."
         }
+
 
     except HTTPException:
         raise

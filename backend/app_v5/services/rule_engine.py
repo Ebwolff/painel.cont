@@ -1,5 +1,9 @@
 from typing import Dict, Any, List, Optional
 import logging
+import redis
+import json
+import os
+
 
 from app_v5.core.supabase_client import SupabaseService
 
@@ -16,25 +20,47 @@ class RuleEngineService:
         self.supabase = SupabaseService()
         self._rules_cache: List[Dict] = []
         self._cache_loaded = False
+        
+        # Redis Connection
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        self.redis = redis.Redis.from_url(redis_url, decode_responses=True)
+        self.cache_key = "rules_matrix_active"
+
 
     def _load_rules(self):
-        """Carrega todas as regras ativas do banco para cache em memória."""
-        if self._cache_loaded:
+        """Carrega regras do Redis ou do Banco."""
+        if self._cache_loaded and self._rules_cache:
             return
+
         try:
+            # 1. Tentar ler do Redis
+            cached = self.redis.get(self.cache_key)
+            if cached:
+                self._rules_cache = json.loads(cached)
+                self._cache_loaded = True
+                logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via Redis.")
+                return
+
+            # 2. Se não houver, carregar do Supabase
             client = self.supabase.get_service_client()
             res = client.table("fiscal_rules").select("*").eq("active", True).execute()
             self._rules_cache = res.data or []
+            
+            # 3. Cache no Redis por 1 hora
+            self.redis.setex(self.cache_key, 3600, json.dumps(self._rules_cache))
+            
             self._cache_loaded = True
-            logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas.")
+            logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via DB e cacheadas no Redis.")
         except Exception as e:
             logger.error(f"RuleEngine: Falha ao carregar regras: {e}")
             self._rules_cache = []
 
     def invalidate_cache(self):
-        """Força recarga das regras na próxima validação."""
+        """Força recarga global das regras limpando o Redis."""
+        self.redis.delete(self.cache_key)
         self._cache_loaded = False
         self._rules_cache = []
+
 
     def _find_matching_rules(
         self,

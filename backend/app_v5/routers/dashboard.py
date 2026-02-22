@@ -1,6 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
+import redis
+import json
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 supabase_service = SupabaseService()
@@ -29,6 +36,16 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
         tenant_id = profile.get('tenant_id')
         
         logger.info(f"DASHBOARD: User={user_id}, Tenant={tenant_id}, Role={role}")
+
+        # 3. Verificar Cache Redis
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        r = redis.Redis.from_url(redis_url, decode_responses=True)
+        cache_key = f"dash:stats:{tenant_id}:{empresa_id or 'all'}"
+        
+        cached_data = r.get(cache_key)
+        if cached_data:
+            logger.info(f"DASHBOARD: Retornando dados via Cache Redis para {tenant_id}")
+            return json.loads(cached_data)
         
         # Preparar Query Base (Últimos 30 dias)
         from datetime import datetime, timedelta
@@ -93,15 +110,24 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
             
             risco_score = int(min(frequencia_score + impacto_score, 100))
                 
-            return {
+            result = {
                 "empresa_id": empresa_id if role == 'monitor' else tenant_id, 
                 "risco_score": risco_score,
                 "total_notas": total_notas,
                 "notas_com_erro": notas_com_erro,
-                "valor_bens_servicos": valor_total_soma,
-                "credito_tributario_potencial": total_creditos,
+                "valor_bens_servicos": round(valor_total_soma, 2),
+                "credito_tributario_potencial": round(total_creditos, 2),
                 "status": "seguro" if risco_score <= 15 else "atencao" if risco_score <= 40 else "critico"
             }
+
+            # 4. Salvar no Cache (TTL 5 minutos)
+            try:
+                r.setex(cache_key, 300, json.dumps(result))
+            except Exception as cache_error:
+                logger.warning(f"DASHBOARD: Falha ao salvar no cache Redis: {cache_error}")
+
+            return result
+
         except Exception as query_error:
             logger.error(f"DASHBOARD: Erro na execução das queries SQL: {query_error}")
             return {
