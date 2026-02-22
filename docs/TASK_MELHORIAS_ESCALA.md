@@ -116,6 +116,7 @@
 
 - [x] **Supabase Pooler (PgBouncer)** — 22/02/2026
   - Status: ✅ Orientação técnica fornecida para troca de porta par 6543 no deploy persistente.
+  - Commit: `1b13b03`
   - Impacto: **Escala de 500 para 5.000+ conexões sem novo banco**
 
 
