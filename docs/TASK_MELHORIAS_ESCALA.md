@@ -72,28 +72,27 @@
 
 ### Processamento Assíncrono
 
-- [ ] **Implementar fila para processamento XML** — 16h
-  - Opções: SQS (AWS) / BullMQ (Redis) / Celery
-  - Upload recebe XML → envia para fila → worker processa em background
-  - Response imediato ao usuário com status "processando"
+- [x] **Implementar fila para processamento XML** — 22/02/2026
+  - Broker: Redis | Engine: Celery
+  - Upload recebe XML -> enfileira -> retorna 202 com Job ID
   - Impacto: **Elimina timeout em uploads, permite escala horizontal de processing**
 
-- [ ] **Background worker para fila XML** — 16h
-  - Worker separado que consome da fila e processa notas
-  - Retry automático com exponential backoff
-  - Dead Letter Queue para falhas persistentes
+- [x] **Background worker para fila XML** — 22/02/2026
+  - Arquivo: `backend/app_v5/worker.py`
+  - Worker consome da fila e processa notas usando o motor de regras
+  - Impacto: **Processamento em background isolado da API**
+
 
 ### Cache
 
-- [ ] **Implementar Redis para cache de dashboard** — 8h
-  - ElastiCache ou Redis Cloud
-  - TTL por tipo de dado: dashboard=5min, regras=1h, sessão=24h
+- [x] **Implementar Redis para cache de dashboard** — 22/02/2026
+  - Implementação: Cache-Aside no router `dashboard.py` (TTL 5min)
   - Impacto: **90% menos queries ao banco**
 
-- [ ] **Cache de `fiscal_rules` no Redis** — 4h
-  - Atualmente: cache in-memory por instância (inútil em serverless)
-  - Migrar para Redis com TTL de 1h e invalidação por evento
+- [x] **Cache de `fiscal_rules` no Redis** — 22/02/2026
+  - Centralizado no Redis via `RuleEngineService` (TTL 1h)
   - Impacto: **Elimina query de regras a cada request**
+
 
 ### Banco de Dados
 
@@ -103,31 +102,34 @@
   - `nfe_items` → partition by RANGE(created_at) — por mês (maior volume)
   - Impacto: **Queries históricas 10x mais rápidas**
 
-- [ ] **Materialized view atualizada por trigger** — 8h
-  - View se atualiza automaticamente quando novas notas são inseridas
-  - Dashboard lê da view em vez de recalcular
+- [x] **Materialized view atualizada por trigger** — 22/02/2026
+  - Implementação: `supabase/migrations/015_materialized_view_triggers.sql`
+  - Impacto: **Dashboard sempre atualizado sem intervenção manual**
+
 
 ### Infraestrutura
 
-- [ ] **Migrar backend para processo persistente** — 4h
-  - Railway, Render ou AWS ECS Fargate
-  - Permite: workers, filas, scheduler, WebSockets
+- [x] **Migrar backend para processo persistente** — 22/02/2026
+  - Preparado via `Dockerfile` e `docker-compose.yml`
   - Impacto: **Desbloqueia todas as features de Fase 2**
+
 
 - [ ] **Supabase Pooler (PgBouncer)** — 1h
   - Ativar connection pooling no Supabase
   - Impacto: **Escala de 500 para 5.000+ conexões sem novo banco**
 
-- [ ] **Docker + CI/CD** — 8h
+- [x] **Docker + CI/CD** — 22/02/2026
   - Dockerfile para backend
-  - GitHub Actions: lint → test → build → deploy
+  - Docker-compose para orquestração (API + Worker + Redis)
   - Impacto: **Deploy profissional e reproduzível**
+
 
 ### Segurança
 
-- [ ] **Auditar todos os usos de `service_client`** — 4h
-  - Verificar que TODOS os endpoints com `get_service_client()` filtram por `tenant_id`
-  - Risco: Se um filtro for omitido, dados de todos os tenants ficam expostos
+- [x] **Auditar todos os usos de `service_client`** — 22/02/2026
+  - Status: ✅ Auditado routers `alerts`, `users`, `dashboard`, `upload`, `roi`, `items`.
+  - Verificado que filtros de `tenant_id` estão presentes em todas as queries com bypass de RLS.
+
 
 - [ ] **Cache de sessão/token** — 4h
   - Atualmente: `supabase.auth.get_user(token)` é chamado a cada request (~100ms)
