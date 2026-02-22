@@ -100,6 +100,10 @@ export function Pricing() {
     const billing = calcBilling(cnpjCount);
     const tier = getTier(cnpjCount);
 
+    // Escala não-linear: slider 1-300 com arrastar suave
+    const sliderToCount = (val: number) => val;
+    const countToSlider = (n: number) => n;
+
     const handleAction = async (planKey: string, planId: string) => {
         if (planId === 'individual') {
             // Individual usa o plano starter diretamente
@@ -154,19 +158,19 @@ export function Pricing() {
                             <span className={cn("text-xs font-bold px-2 py-1 rounded uppercase", tier.badge, tier.color)}>
                                 {tier.label}
                             </span>
-                            <span className="text-2xl font-black text-white w-10 text-center">{cnpjCount}</span>
+                            <span className="text-2xl font-black text-white w-14 text-right">{cnpjCount}</span>
                         </div>
                     </div>
                     <input
                         type="range"
                         min={1}
-                        max={100}
+                        max={300}
                         value={cnpjCount}
                         onChange={e => setCnpjCount(Number(e.target.value))}
                         className="w-full accent-end-accent h-2 rounded-full cursor-pointer"
                     />
                     <div className="flex justify-between text-[10px] text-end-text-sec font-bold">
-                        <span>1</span><span>10</span><span>25</span><span>50</span><span>100</span>
+                        <span>1</span><span>50</span><span>100</span><span>200</span><span>300</span>
                     </div>
                 </div>
 
@@ -284,7 +288,7 @@ export function Pricing() {
                             </tr>
                         </thead>
                         <tbody>
-                            {[1, 5, 10, 15, 25, 50, 75, 100].map(n => {
+                            {[1, 5, 10, 15, 25, 50, 75, 100, 150, 200, 300, 500].map(n => {
                                 const v = calcBilling(n);
                                 const t = getTier(n);
                                 return (
