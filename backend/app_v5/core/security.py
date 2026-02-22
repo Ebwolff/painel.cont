@@ -2,6 +2,18 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from fastapi.concurrency import run_in_threadpool
+import redis
+import json
+import hashlib
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Redis Connection for Auth Cache
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+r_auth = redis.Redis.from_url(redis_url, decode_responses=True)
+
 
 # Define HTTPBearer scheme
 security = HTTPBearer()
@@ -23,21 +35,40 @@ from app_v5.core.supabase_client import SupabaseService
 
 async def get_current_user(token: str = Depends(get_current_token)):
     """
-    Validates the token with Supabase (async threadpool) and returns the user object.
-    This acts as a dependency for protected routes.
+    Validates the token with Redis cache first, then Supabase.
+    TTL: 5 minutes.
     """
-    supabase = SupabaseService().get_client_for_user(token)
+    # 1. Gerar Hash do Token (Segurança e Tamanho da Chave)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    cache_key = f"auth_token:{token_hash}"
+
     try:
-        # Executar chamada bloqueante em thread separada
+        # 2. Tentar Cache Redis
+        cached_user = r_auth.get(cache_key)
+        if cached_user:
+            return json.loads(cached_user)
+
+        # 3. Se não houver cache, buscar no Supabase
+        supabase = SupabaseService().get_client_for_user(token)
         user_res = await run_in_threadpool(supabase.auth.get_user, token)
         
         if not user_res.user:
              raise HTTPException(status_code=401, detail="Token inválido ou expirado")
         
-        return {
+        user_info = {
             "id": user_res.user.id,
             "email": user_res.user.email,
             "access_token": token
         }
+
+        # 4. Salvar no Cache por 5 minutos (300s)
+        r_auth.setex(cache_key, 300, json.dumps(user_info))
+        
+        return user_info
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Erro de autenticação: {str(e)}")
+        logger.error(f"AUTH ERROR: {str(e)}")
+        raise HTTPException(status_code=401, detail="Falha na autenticação.")
+

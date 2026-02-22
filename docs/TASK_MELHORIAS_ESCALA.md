@@ -131,9 +131,9 @@
   - Verificado que filtros de `tenant_id` estão presentes em todas as queries com bypass de RLS.
 
 
-- [ ] **Cache de sessão/token** — 4h
-  - Atualmente: `supabase.auth.get_user(token)` é chamado a cada request (~100ms)
-  - Cachear resultado no Redis com TTL de 5min
+- [x] **Cache de sessão/token** — 22/02/2026
+  - Implementação: Redis no middleware `app_v5/core/security.py` (TTL 5min)
+  - Impacto: **Redução de ~100ms em cada request autenticado**
 
 ---
 
