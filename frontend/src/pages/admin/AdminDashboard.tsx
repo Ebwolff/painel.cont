@@ -8,9 +8,9 @@ interface DashboardStats {
     total_tenants: number;
     active_users: number;
     processed_xmls: number;
+    total_cnpjs_monitored: number;
     recent_tenants: any[];
     plan_stats?: {
-        counts: { starter: number; pro: number; enterprise: number };
         mrr: number;
     };
 }
@@ -60,16 +60,9 @@ export function AdminDashboard() {
         { label: 'Total de Escritórios', value: stats?.total_tenants || 0, icon: Building2, color: 'text-blue-500' },
         { label: 'Usuários Ativos', value: stats?.active_users || 0, icon: Users, color: 'text-green-500' },
         { label: 'XMLs Processados', value: stats?.processed_xmls || 0, icon: FileText, color: 'text-end-accent' },
-        { label: 'Alertas de Sistema', value: '0', icon: AlertOctagon, color: 'text-red-500' }, // Mocked for now
+        { label: 'CNPJs Monitorados', value: stats?.total_cnpjs_monitored || 0, icon: AlertOctagon, color: 'text-red-500' },
     ];
 
-    const distributionData = [
-        { label: 'Monitor Inicial', key: 'starter', count: stats?.plan_stats?.counts.starter || 0, color: 'bg-gray-500' },
-        { label: 'Monitor Profissional', key: 'pro', count: stats?.plan_stats?.counts.pro || 0, color: 'bg-blue-500' },
-        { label: 'Inteligência Corporativa', key: 'enterprise', count: stats?.plan_stats?.counts.enterprise || 0, color: 'bg-end-accent' }
-    ];
-
-    const totalStats = stats?.total_tenants || 1; // avoid division by zero
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -154,36 +147,33 @@ export function AdminDashboard() {
                 </div>
 
                 <div className="bg-end-card border border-end-border rounded-xl p-6">
-                    <h3 className="text-lg font-bold text-white mb-6">Distribuição de Planos (SaaS)</h3>
-                    <div className="space-y-6">
-                        {distributionData.map(item => {
-                            const percent = Math.round((item.count / totalStats) * 100);
-                            return (
-                                <div key={item.label}>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs font-bold text-white uppercase">{item.label}</span>
-                                        <span className="text-xs text-end-text-sec">{item.count} escritórios ({percent}%)</span>
-                                    </div>
-                                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className={cn("h-full rounded-full transition-all duration-1000", item.color)}
-                                            style={{ width: `${percent}%` }}
-                                        />
-                                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">Faturamento por Modelo CNPJ</h3>
+                    <p className="text-xs text-end-text-sec mb-6">Precificação incremental — Individual / Starter / Escritório / Enterprise</p>
+                    <div className="space-y-4">
+                        {[
+                            { label: 'Individual (1 CNPJ)', desc: 'R$ 97 fixo', color: 'bg-slate-500' },
+                            { label: 'Starter (2–10 CNPJs)', desc: 'R$ 40/CNPJ excedente', color: 'bg-green-500' },
+                            { label: 'Escritório (11–50 CNPJs)', desc: 'R$ 20/CNPJ excedente', color: 'bg-blue-500' },
+                            { label: 'Enterprise (51+ CNPJs)', desc: 'R$ 10/CNPJ excedente', color: 'bg-amber-500' },
+                        ].map(item => (
+                            <div key={item.label} className="flex items-center gap-3">
+                                <div className={cn("w-2 h-2 rounded-full", item.color)} />
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-white">{item.label}</p>
+                                    <p className="text-[10px] text-end-text-sec">{item.desc}</p>
                                 </div>
-                            );
-                        })}
-
-                        <div className="mt-8 pt-6 border-t border-white/5">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <p className="text-xs text-end-text-sec uppercase font-bold">MRR Estimado</p>
-                                    <p className="text-2xl font-black text-white tracking-tighter">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats?.plan_stats?.mrr || 0)}
-                                    </p>
-                                </div>
-                                <TrendingUp className="text-green-500" size={32} />
                             </div>
+                        ))}
+                    </div>
+                    <div className="mt-8 pt-6 border-t border-white/5">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="text-xs text-end-text-sec uppercase font-bold">MRR Estimado</p>
+                                <p className="text-2xl font-black text-white tracking-tighter">
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats?.plan_stats?.mrr || 0)}
+                                </p>
+                            </div>
+                            <TrendingUp className="text-green-500" size={32} />
                         </div>
                     </div>
                 </div>
