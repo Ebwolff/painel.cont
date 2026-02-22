@@ -1,10 +1,12 @@
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "backend/Dockerfile"
-buildCommand = ""
+builder = "NIXPACKS"
+watchPatterns = ["backend/**"]
+
+[build.nixpacks]
+nixPkgs = ["libxml2", "libxslt"]
 
 [deploy]
-startCommand = "uvicorn app_v5.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "cd backend && uvicorn app_v5.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
