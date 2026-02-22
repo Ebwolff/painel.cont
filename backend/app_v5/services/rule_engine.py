@@ -163,6 +163,7 @@ class RuleEngineService:
                 if is_fallback:
                     msg_suffix = f" (Validado por Categoria NCM: {rule.get('ncm')}){msg_suffix}"
 
+                is_opportunity = rule.get("is_opportunity", False)
                 results_flags[rule_type] = False
                 alertas.append({
                     "tipo": f"{rule_type}_incorreto",
@@ -176,6 +177,7 @@ class RuleEngineService:
                     "diferenca": round(diff, 2),
                     "legal_foundation": rule.get("legal_foundation")
                 })
+
 
         return {
             "n_item": item.get("n_item"),

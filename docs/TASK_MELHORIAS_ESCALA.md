@@ -20,17 +20,18 @@
 - [x] **Criar migration com índices compostos** — 22/02/2026
   - Arquivo: `supabase/migrations/013_performance_indexes.sql`
   - Status: ✅ Criado migration com 10+ índices otimizados.
-    - [ ] `idx_notas_tenant_created` (notas_fiscais: tenant_id, created_at DESC)
-    - [ ] `idx_notas_tenant_status` (notas_fiscais: tenant_id, status)
-    - [ ] `idx_notas_empresa_status` (notas_fiscais: empresa_id, status)
-    - [ ] `idx_alertas_tenant_resolvido` (alertas_conformidade: tenant_id, resolvido)
-    - [ ] `idx_alertas_empresa_resolvido` (alertas_conformidade: empresa_id, resolvido)
-    - [ ] `idx_alertas_nota` (alertas_conformidade: nota_fiscal_id)
-    - [ ] `idx_items_nota` (nfe_items: nota_fiscal_id)
-    - [ ] `idx_items_ncm` (nfe_items: ncm)
-    - [ ] `idx_rules_active_type` (fiscal_rules: active, rule_type)
-    - [ ] `idx_rules_ncm` (fiscal_rules: ncm)
+    - [x] `idx_notas_tenant_created`
+    - [x] `idx_notas_tenant_status`
+    - [x] `idx_notas_empresa_status`
+    - [x] `idx_alertas_tenant_resolvido`
+    - [x] `idx_alertas_empresa_resolvido`
+    - [x] `idx_alertas_nota`
+    - [x] `idx_items_nota`
+    - [x] `idx_items_ncm`
+    - [x] `idx_rules_active_type`
+    - [x] `idx_rules_ncm`
   - Impacto: **10x performance em queries do dashboard**
+
 
 - [x] **Materialized views para dashboard** — 22/02/2026
   - Arquivo: `supabase/migrations/014_dashboard_materialized_view.sql`
@@ -49,8 +50,9 @@
   - Status: ✅ Sentry SDK integrado ao backend (FastAPI). Requer variável `SENTRY_DSN` no deploy.
 
 - [x] **Substituir `print()` por logging estruturado** — 22/02/2026
-  - Arquivos afetados: `dashboard.py`, `supabase_client.py`, `upload.py`, `alerts.py`, `roi.py`, `sefaz.py`, `anomalies.py`, `companies.py`, `features.py`, `items.py`, `simulation.py`, `certificates.py`
-  - Status: ✅ Concluído. 100% dos `print()` críticos do backend foram migrados para `logger`.
+  - Arquivos afetados: `dashboard.py`, `supabase_client.py`, `upload.py`, `alerts.py`, `roi.py`, `sefaz.py`, `anomalies.py`, `companies.py`, `features.py`, `items.py`, `simulation.py`, `certificates.py`, `admin.py`, `users.py`, `admin_rules.py`
+  - Status: ✅ Concluído. 100% dos routers do backend utilizam `logger`.
+
 
 ### Testes
 

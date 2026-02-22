@@ -4,6 +4,10 @@ from pydantic import BaseModel
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.routers.admin import verify_super_admin
 from app_v5.services.external_sync import ExternalSyncService
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/admin/rules", tags=["Admin - Fiscal Rules"])
 supabase_service = SupabaseService()
@@ -56,4 +60,6 @@ async def trigger_external_sync(client = Depends(verify_super_admin)):
         result = await sync_service.sync_federal_rates()
         return result
     except Exception as e:
+        logger.error(f"ADMIN_RULES: Falha na sincronização externa: {e}")
         raise HTTPException(status_code=500, detail=f"Falha na sincronização: {str(e)}")
+

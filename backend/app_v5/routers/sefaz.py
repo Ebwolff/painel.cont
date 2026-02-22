@@ -1,7 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from app_v5.services.sefaz_sync import SefazSyncService
 from app_v5.core.security import get_current_token
+from app_v5.core.supabase_client import SupabaseService
 import logging
+
 
 logger = logging.getLogger(__name__)
 

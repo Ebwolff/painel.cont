@@ -47,6 +47,9 @@ class XMLParserService:
             )
             root = etree.fromstring(xml_content, parser)
             
+            if root is None:
+                raise ValueError("Arquivo XML corrompido ou mal formatado.")
+
             # 1. Localizar infNFe de forma universal
             # Busca em qualquer nível um elemento cujo nome seja 'infNFe'
             inf_nfe_elements = root.xpath("//*[local-name()='infNFe']")

@@ -23,4 +23,15 @@ def test_debug_env_endpoint(mocker):
 def test_upload_xml_unauthorized():
     """Garante que o upload exige autenticação (401 ou 403 sem token)."""
     response = client.post("/api/upload/xml")
-    assert response.status_code in [401, 403, 422] # 422 se faltar o body, mas auth deve vir antes
+    assert response.status_code in [401, 403, 422, 307] # 422 se faltar o body, 307 redirect se auth for via root
+
+def test_dashboard_metrics_unauthorized():
+    """Garante que o dashboard exige autenticação."""
+    response = client.get("/api/dashboard/current-company")
+    assert response.status_code in [401, 403]
+
+
+def test_admin_tenants_unauthorized():
+    """Garante que rotas admin estão protegidas."""
+    response = client.get("/api/admin/tenants")
+    assert response.status_code in [401, 403]

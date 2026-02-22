@@ -3,6 +3,10 @@ from app_v5.core.security import get_current_token
 from app_v5.core.supabase_client import SupabaseService
 from pydantic import BaseModel
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 supabase_service = SupabaseService()
@@ -72,7 +76,9 @@ async def create_tenant(tenant: TenantCreate, client = Depends(verify_super_admi
         )
         return res.data[0]
     except Exception as e:
+        logger.error(f"ADMIN: Erro ao criar tenant: {e}")
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {str(e)}")
+
 
 @router.put("/tenants/{tenant_id}", summary="Atualizar tenant (Super Admin)")
 async def update_tenant(tenant_id: str, data: TenantUpdate, client = Depends(verify_super_admin)):
