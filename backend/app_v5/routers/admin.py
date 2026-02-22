@@ -21,6 +21,33 @@ class TenantUpdate(BaseModel):
     cnpj: str
     plano: str
 
+
+# --- PRICING ENGINE (Modelo Incremental por CNPJ) ---
+PRICING_TIERS = [
+    {"label": "Individual", "min": 1, "max": 1,  "fixed": 97.0},
+    {"label": "Starter",    "min": 2, "max": 10, "rate": 40.0, "base_cost": 97.0, "base_qty": 1},
+    {"label": "Escritório", "min": 11,"max": 50, "rate": 20.0, "base_cost": 97.0 + 9 * 40.0, "base_qty": 10},
+    {"label": "Enterprise", "min": 51,"max": None,"rate": 10.0, "base_cost": 97.0 + 9 * 40.0 + 40 * 20.0, "base_qty": 50},
+]
+
+def calculate_billing(cnpj_count: int) -> dict:
+    if cnpj_count <= 0:
+        return {"tier": "Sem CNPJs", "monthly_value": 0.0, "cnpj_count": 0}
+    for tier in PRICING_TIERS:
+        if tier["max"] is None or cnpj_count <= tier["max"]:
+            if "fixed" in tier:
+                value = tier["fixed"]
+            else:
+                extra = cnpj_count - tier["base_qty"]
+                value = tier["base_cost"] + extra * tier["rate"]
+            return {
+                "tier": tier["label"],
+                "monthly_value": round(value, 2),
+                "cnpj_count": cnpj_count,
+                "rate_per_cnpj": round(value / cnpj_count, 2),
+            }
+    return {"tier": "Enterprise", "monthly_value": 0.0, "cnpj_count": cnpj_count}
+
 # Dependency to check if user is super_admin
 async def verify_super_admin(token: str = Depends(get_current_token)):
     client = supabase_service.get_client_for_user(token)
@@ -36,20 +63,30 @@ async def verify_super_admin(token: str = Depends(get_current_token)):
     
     return client
 
-@router.get("/tenants", summary="Listar todos os tenants (Super Admin)")
+@router.get("/tenants", summary="Listar todos os tenants com dados de billing (Super Admin)")
 async def list_tenants(client = Depends(verify_super_admin)):
-    # Super admin needs to see all tenants using SERVICE ROLE KEY usually, 
-    # OR we rely on RLS policies that allow super_admin to see everything.
-    # For now, let's use the authenticated client assuming RLS allows super_admin to select from tenants.
-    # If RLS on 'tenants' table is "Users see own tenant", super_admin won't see others unless we change policy or use service key.
+    admin_client = supabase_service.get_service_client()
     
-    # STRATEGY: Use Service Key for Admin Operations to bypass RLS limits designed for regular users.
-    # verify_super_admin already confirmed the user is legit.
+    tenants_res = admin_client.table("tenants").select("*").execute()
+    tenants = tenants_res.data or []
     
-    admin_client = supabase_service.get_service_client() # Using service role client for admin ops
+    # Contar empresas monitoradas por tenant (CNPJs na carteira)
+    companies_res = admin_client.table("empresas").select("tenant_id").execute()
+    companies_data = companies_res.data or []
     
-    res = admin_client.table("tenants").select("*").execute()
-    return res.data
+    # Construir mapa de contagem: {tenant_id: count}
+    cnpj_count_map: dict = {}
+    for company in companies_data:
+        tid = company.get("tenant_id")
+        if tid:
+            cnpj_count_map[tid] = cnpj_count_map.get(tid, 0) + 1
+    
+    # Enriquecer cada tenant com dados de billing
+    for tenant in tenants:
+        count = cnpj_count_map.get(tenant["id"], 0)
+        tenant["billing"] = calculate_billing(count)
+    
+    return tenants
 
 @router.post("/tenants", summary="Criar novo tenant (Super Admin)")
 async def create_tenant(tenant: TenantCreate, client = Depends(verify_super_admin)):
@@ -206,40 +243,39 @@ async def get_dashboard_stats(client = Depends(verify_super_admin)):
     tenants_res = admin_client.table("tenants").select("id", count="exact").execute()
     total_tenants = tenants_res.count if tenants_res.count else 0
     
-    # 2. Total Usuários (Todos os escritórios)
+    # 2. Total Usuários
     users_res = admin_client.table("profiles").select("id", count="exact").execute()
     total_users = users_res.count if users_res.count else 0
     
-    # 3. Total XMLs Processados (Global)
+    # 3. Total XMLs Processados
     xml_res = admin_client.table("notas_fiscais").select("id", count="exact").execute()
     total_xmls = xml_res.count if xml_res.count else 0
     
     # 4. Recent Tenants (Limit 5)
     recent_res = admin_client.table("tenants").select("*").order("created_at", desc=True).limit(5).execute()
     
-    # 5. Plan Distribution & MRR
-    # Preços definidos: Starter: 499, Pro: 997, Enterprise: 2490
-    all_tenants_res = admin_client.table("tenants").select("plano").execute()
-    all_tenants_data = all_tenants_res.data or []
+    # 5. MRR Real — baseado em CNPJs monitorados por cada tenant (modelo incremental)
+    all_tenants_res = admin_client.table("tenants").select("id").execute()
+    all_tenant_ids = [t["id"] for t in (all_tenants_res.data or [])]
     
-    plan_counts = {"starter": 0, "pro": 0, "enterprise": 0}
-    for t in all_tenants_data:
-        p = t.get("plano", "starter")
-        if p in plan_counts:
-            plan_counts[p] += 1
-        else:
-            plan_counts["starter"] += 1
-            
-    mrr = (plan_counts["starter"] * 499) + (plan_counts["pro"] * 997) + (plan_counts["enterprise"] * 2490)
+    companies_res = admin_client.table("empresas").select("tenant_id").execute()
+    cnpj_count_map: dict = {}
+    for company in (companies_res.data or []):
+        tid = company.get("tenant_id")
+        if tid:
+            cnpj_count_map[tid] = cnpj_count_map.get(tid, 0) + 1
+    
+    mrr = sum(calculate_billing(cnpj_count_map.get(tid, 0))["monthly_value"] for tid in all_tenant_ids)
+    total_cnpjs = sum(cnpj_count_map.values())
     
     return {
         "total_tenants": total_tenants,
         "active_users": total_users,
         "processed_xmls": total_xmls,
+        "total_cnpjs_monitored": total_cnpjs,
         "recent_tenants": recent_res.data,
         "plan_stats": {
-            "counts": plan_counts,
-            "mrr": mrr
+            "mrr": round(mrr, 2)
         }
     }
 
