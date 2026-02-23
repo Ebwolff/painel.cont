@@ -31,6 +31,7 @@ export function Empresas() {
     const [certUploadResult, setCertUploadResult] = useState<{ expires_at: string; dias_restantes: number; ambiente: string } | null>(null);
     const [certUploadError, setCertUploadError] = useState<string | null>(null);
     const [isUploadingCert, setIsUploadingCert] = useState(false);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const formatCNPJ = (value: string) => {
         const digits = value.replace(/\D/g, '').slice(0, 14);
@@ -333,19 +334,54 @@ export function Empresas() {
                                 <div className="p-2 bg-end-bg rounded-lg group-hover:bg-end-accent/10 transition-colors">
                                     <Building2 className="text-end-accent" size={24} />
                                 </div>
-                                <div className="flex gap-2">
-                                    {hasPermission('can_delete_data') && (
-                                        <button
-                                            title="Excluir Empresa"
-                                            className="text-end-text-sec hover:text-end-error transition-colors p-1"
-                                            onClick={() => handleDelete(empresa.id)}
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                    <button className="text-end-text-sec hover:text-white p-1">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setOpenMenuId(openMenuId === empresa.id ? null : empresa.id)}
+                                        className="text-end-text-sec hover:text-white p-1 transition-colors"
+                                    >
                                         <MoreVertical size={20} />
                                     </button>
+
+                                    {openMenuId === empresa.id && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                            <div className="absolute right-0 top-8 z-50 bg-end-card border border-end-border rounded-lg shadow-xl shadow-black/40 py-1 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
+                                                <button
+                                                    onClick={() => {
+                                                        setOpenMenuId(null);
+                                                        setSelectedCompany(empresa.id);
+                                                        setIsCertModalOpen(true);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors"
+                                                >
+                                                    <Key size={14} className="text-end-accent" /> Certificado A1
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setOpenMenuId(null);
+                                                        handleSync(empresa.id);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors"
+                                                >
+                                                    <RefreshCw size={14} className="text-end-accent" /> Sincronizar SEFAZ
+                                                </button>
+                                                {hasPermission('can_delete_data') && (
+                                                    <>
+                                                        <div className="border-t border-end-border my-1" />
+                                                        <button
+                                                            onClick={() => {
+                                                                setOpenMenuId(null);
+                                                                handleDelete(empresa.id);
+                                                            }}
+                                                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-end-error hover:bg-end-error/10 transition-colors"
+                                                        >
+                                                            <Trash2 size={14} /> Excluir Empresa
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
