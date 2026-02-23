@@ -504,7 +504,7 @@ export function RelatorioValor() {
                         <h4 className="text-2xl font-black italic tracking-tighter print:text-black">SUA CONTABILIDADE É UM INVESTIMENTO</h4>
                         <p className="font-medium text-black/70 print:text-black/80">Este relatório prova que o monitoramento se paga e gera lucro.</p>
                     </div>
-                    <button className="bg-black text-white px-8 py-3 rounded-md font-bold hover:scale-105 transition-transform flex items-center gap-2 print:hidden">
+                    <button onClick={() => window.print()} className="bg-black text-white px-8 py-3 rounded-md font-bold hover:scale-105 transition-transform flex items-center gap-2 print:hidden">
                         Compartilhar com Cliente
                         <ArrowRight size={18} />
                     </button>
