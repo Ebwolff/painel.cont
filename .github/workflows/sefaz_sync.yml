@@ -1,0 +1,17 @@
+name: SEFAZ Automatic Sync
+
+on:
+    schedule:
+        # Rodar a cada 4 horas (Horário de Brasília: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
+        # UTC: 03:00, 07:00, 11:00, 15:00, 19:00, 23:00
+        - cron: "0 3,7,11,15,19,23 * * *"
+    workflow_dispatch: # Permite rodar manualmente pelo painel do GitHub
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Trigger SEFAZ Sync API
+              run: |
+                  curl -X GET "https://painelcont-production-b6dc.up.railway.app/api/cron/sefaz-sync-all" \
+                  -H "Accept: application/json"
