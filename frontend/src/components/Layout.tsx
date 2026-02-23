@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, UploadCloud, AlertTriangle, Building2,
-    LogOut, Menu, TrendingUp, User, X
+    LogOut, Menu, TrendingUp, User, X, Sparkles
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -91,12 +91,20 @@ export function Layout() {
 
                 {/* Usage indicator */}
                 {usage && (
-                    <div className="p-4">
+                    <div className="p-4 border-t border-end-border/50">
                         <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                             <span className="text-[10px] font-bold text-end-text-sec uppercase tracking-widest">Empresas</span>
                             <p className="text-sm font-bold text-white mt-1">
                                 {usage.companies_count} / {usage.companies_limit}
                             </p>
+
+                            <Link
+                                to="/planos"
+                                className="mt-3 flex items-center justify-center gap-2 w-full py-2 bg-end-accent/10 border border-end-accent/20 text-end-accent text-[10px] font-bold uppercase rounded hover:bg-end-accent/20 transition-all group"
+                            >
+                                <Sparkles size={12} className="group-hover:animate-pulse" />
+                                Gerenciar Plano / Upgrade
+                            </Link>
                         </div>
                     </div>
                 )}
