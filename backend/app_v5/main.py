@@ -38,7 +38,7 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Cron Sync Endpoint (Triggered by Vercel Cron)
+# Cron Sync Endpoint (Triggered by External Cron)
 @app.get("/api/cron/sync-tax-rates")
 async def cron_tax_sync():
     """Trigger manual da sincronização fiscal via Cron extern."""
@@ -50,6 +50,46 @@ async def cron_tax_sync():
         return {"status": "success", "result": result}
     except Exception as e:
         logger.error(f"CRON: Falha na sincronização: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/cron/sefaz-sync-all")
+async def cron_sefaz_sync_all():
+    """Trigger automático para sincronizar todas as empresas com certificado ativo."""
+    logger.info("CRON_SEFAZ: Iniciando sincronização global das empresas...")
+    try:
+        from app_v5.core.supabase_client import SupabaseService
+        from app_v5.services.sefaz_sync import SefazSyncService
+        
+        supabase = SupabaseService()
+        admin_client = supabase.get_service_client()
+        sefaz_service = SefazSyncService()
+        
+        # 1. Buscar todos os certificados ativos
+        cert_res = admin_client.table("certificados_a1").select("empresa_id, tenant_id").eq("status", "ativo").execute()
+        certificados = cert_res.data or []
+        
+        results = []
+        for cert in certificados:
+            empresa_id = cert.get("empresa_id")
+            tenant_id = cert.get("tenant_id")
+            
+            if empresa_id and tenant_id:
+                logger.info(f"CRON_SEFAZ: Disparando sync para empresa {empresa_id}")
+                # Executa o sync para cada empresa (SefazSyncService.sync_company_documents é async)
+                res = await sefaz_service.sync_company_documents(empresa_id, tenant_id)
+                results.append({
+                    "empresa_id": empresa_id,
+                    "status": res.get("status"),
+                    "notas": res.get("notas_processadas", 0)
+                })
+        
+        return {
+            "status": "success", 
+            "total_processado": len(results),
+            "detalhes": results
+        }
+    except Exception as e:
+        logger.error(f"CRON_SEFAZ: Erro catastrófico no sync global: {e}")
         return {"status": "error", "message": str(e)}
 
 
