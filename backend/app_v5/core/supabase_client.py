@@ -1,7 +1,9 @@
 import os
+import logging
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 from cryptography.fernet import Fernet
