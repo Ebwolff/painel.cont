@@ -261,7 +261,7 @@ export function RelatorioValor() {
                             <p className="text-end-text-sec text-xs">Projeção baseada no faturamento real dos últimos {simulation.periodo_dias} dias: <span className="text-white font-bold">{simulation.total_faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
                         </div>
                         <div className="bg-end-success/10 border border-end-success/20 rounded-lg p-3">
-                            <p className="text-[10px] font-bold text-end-success uppercase mb-1">Economia em 2026</p>
+                            <p className="text-[10px] font-bold text-end-success uppercase mb-1">Economia em 2028</p>
                             <p className="text-xl font-black text-end-success tracking-tighter">
                                 + {simulation.economia_transicao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </p>
@@ -269,29 +269,98 @@ export function RelatorioValor() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {Object.entries(simulation.cenarios).map(([key, cen]: [string, any]) => (
-                            <div key={key} className={cn(
-                                "p-6 rounded-xl border transition-all",
-                                key === 'transicao_2026'
-                                    ? "bg-end-accent/5 border-end-accent/30 ring-1 ring-end-accent/20"
-                                    : "bg-white/[0.02] border-white/5"
-                            )}>
+                        {/* Cenário Atual */}
+                        {simulation.cenarios.atual && (
+                            <div className="p-6 rounded-xl border bg-white/[0.02] border-white/5 transition-all">
                                 <div className="flex justify-between items-start mb-4">
-                                    <p className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">{cen.nome}</p>
-                                    <span className="bg-white/10 text-white text-[9px] px-2 py-0.5 rounded font-bold">{cen.aliquota_media.toFixed(2)}%</span>
+                                    <p className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">{simulation.cenarios.atual.nome}</p>
+                                    <span className="bg-white/10 text-white text-[9px] px-2 py-0.5 rounded font-bold">{simulation.cenarios.atual.aliquota_media.toFixed(2)}%</span>
                                 </div>
                                 <p className="text-2xl font-black text-white tracking-tighter mb-1">
-                                    {cen.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    {simulation.cenarios.atual.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </p>
                                 <p className="text-[10px] text-end-text-sec italic">Estimativa de carga</p>
                             </div>
-                        ))}
+                        )}
+
+                        {/* Cenário Transição 2026 */}
+                        {simulation.cenarios.transicao_2026 && (
+                            <div className="p-6 rounded-xl border bg-end-accent/5 border-end-accent/30 ring-1 ring-end-accent/20 transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">{simulation.cenarios.transicao_2026.nome}</p>
+                                    <span className="bg-white/10 text-white text-[9px] px-2 py-0.5 rounded font-bold">{simulation.cenarios.transicao_2026.aliquota_media.toFixed(2)}%</span>
+                                </div>
+                                <p className="text-2xl font-black text-white tracking-tighter mb-1">
+                                    {simulation.cenarios.transicao_2026.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                                <p className="text-[10px] text-end-text-sec italic">Estimativa de carga</p>
+                            </div>
+                        )}
+
+                        {/* Cenário Reforma Plena — IVA Líquido */}
+                        {simulation.cenarios.reforma_full && (
+                            <div className="p-6 rounded-xl border bg-white/[0.02] border-white/5 transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">{simulation.cenarios.reforma_full.nome}</p>
+                                    <span className="bg-end-accent/20 text-end-accent text-[9px] px-2 py-0.5 rounded font-bold">
+                                        Efetiva: {simulation.cenarios.reforma_full.aliquota_media.toFixed(2)}%
+                                    </span>
+                                </div>
+                                <p className="text-2xl font-black text-white tracking-tighter mb-1">
+                                    {simulation.cenarios.reforma_full.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                                <p className="text-[10px] text-end-text-sec italic mb-3">IVA Líquido (Débito − Crédito)</p>
+
+                                {/* Breakdown IVA */}
+                                {simulation.cenarios.reforma_full.iva_debito != null && (
+                                    <div className="mt-2 pt-3 border-t border-white/5 space-y-1.5">
+                                        <div className="flex justify-between text-[10px]">
+                                            <span className="text-end-text-sec">Débito (vendas × {simulation.cenarios.reforma_full.aliquota_nominal?.toFixed(1)}%)</span>
+                                            <span className="text-end-error font-bold">
+                                                {simulation.cenarios.reforma_full.iva_debito.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px]">
+                                            <span className="text-end-text-sec">(−) Crédito (compras × {simulation.cenarios.reforma_full.aliquota_nominal?.toFixed(1)}%)</span>
+                                            <span className="text-end-success font-bold">
+                                                − {simulation.cenarios.reforma_full.iva_credito.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] pt-1.5 border-t border-white/10">
+                                            <span className="text-white font-bold">= IVA a Recolher</span>
+                                            <span className="text-white font-black">
+                                                {simulation.cenarios.reforma_full.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="mt-8 p-4 bg-end-error/5 border border-end-error/10 rounded-lg flex items-center gap-4">
-                        <AlertCircle size={24} className="text-end-error shrink-0" />
+                    {/* Volume de Operações */}
+                    {simulation.total_saidas > 0 && (
+                        <div className="mt-6 grid grid-cols-2 gap-4">
+                            <div className="bg-white/[0.02] rounded-lg p-4 border border-white/5">
+                                <p className="text-[10px] font-bold text-end-text-sec uppercase mb-1">Volume de Vendas (Saídas)</p>
+                                <p className="text-lg font-black text-white">{simulation.total_saidas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                            </div>
+                            <div className="bg-white/[0.02] rounded-lg p-4 border border-white/5">
+                                <p className="text-[10px] font-bold text-end-text-sec uppercase mb-1">Volume de Compras (Entradas)</p>
+                                <p className="text-lg font-black text-white">{simulation.total_entradas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-6 p-4 bg-end-accent/5 border border-end-accent/10 rounded-lg flex items-center gap-4">
+                        <AlertCircle size={24} className="text-end-accent shrink-0" />
                         <p className="text-xs text-end-text-sec">
-                            <strong className="text-end-error">Atenção Estratégica:</strong> Embora a transição de 2026 reduza a carga imediata via IBS/CBS (1%), a projeção plena indica um aumento de <span className="text-white font-bold">{simulation.impacto_full.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>. É vital manter o monitoramento para otimizar créditos agora.
+                            <strong className="text-end-accent">Análise Estratégica:</strong>{' '}
+                            {simulation.impacto_full < 0 ? (
+                                <>A reforma tributária projeta uma <span className="text-end-success font-bold">redução</span> de <span className="text-white font-bold">{Math.abs(simulation.impacto_full).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> na carga tributária. Os créditos de compras compensam significativamente o IVA sobre vendas.</>
+                            ) : (
+                                <>Mesmo com os créditos de compra, a projeção indica um aumento de <span className="text-white font-bold">{simulation.impacto_full.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>. É vital maximizar o aproveitamento de créditos.</>
+                            )}
                         </p>
                     </div>
                 </div>
