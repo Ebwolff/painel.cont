@@ -9,12 +9,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 supabase_service = SupabaseService()
 
-# Definição dos Tiers
+# Todas as funcionalidades são liberadas para todos os planos.
+# A diferenciação é apenas no limite de empresas (volume).
+ALL_FEATURES = [
+    "basic_monitor", "upload_manual", "roi_summary",
+    "advanced_alerts", "sefaz_sync", "tax_reform_simulator",
+    "ai_anomaly_detection", "executive_reports"
+]
+
 TIER_FEATURES = {
-    "starter": ["basic_monitor", "upload_manual"],
-    "pro": ["basic_monitor", "upload_manual", "roi_summary", "advanced_alerts", "sefaz_sync"],
-    "enterprise": ["basic_monitor", "upload_manual", "roi_summary", "advanced_alerts", "sefaz_sync", "tax_reform_simulator", "ai_anomaly_detection", "executive_reports"]
+    "starter": ALL_FEATURES,
+    "pro": ALL_FEATURES,
+    "enterprise": ALL_FEATURES,
 }
+
 
 @router.get("/my-features", summary="Listar recursos disponíveis para o plano atual")
 def get_user_features(user: dict = Depends(get_current_user)):

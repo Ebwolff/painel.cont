@@ -1,9 +1,21 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../services/api';
 
+// Todas as features são liberadas para todos os planos.
+// A diferenciação é apenas no limite de empresas (volume).
+const ALL_FEATURES = [
+    'basic_monitor', 'upload_manual', 'roi_summary',
+    'advanced_alerts', 'sefaz_sync', 'tax_reform_simulator',
+    'ai_anomaly_detection', 'executive_reports'
+];
+
 export interface FeatureLayout {
     tier: 'starter' | 'pro' | 'enterprise';
     features: string[];
+    usage?: {
+        companies_limit: number;
+        companies_count: number;
+    };
 }
 
 export function useFeatures() {
@@ -18,8 +30,8 @@ export function useFeatures() {
                 if (isMounted) setFeatureData(data);
             } catch (error) {
                 console.error("Failed to load features", error);
-                // Fallback to starter
-                if (isMounted) setFeatureData({ tier: 'starter', features: ['basic_monitor', 'upload_manual'] });
+                // Fallback: todas as features liberadas
+                if (isMounted) setFeatureData({ tier: 'starter', features: ALL_FEATURES });
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -28,21 +40,23 @@ export function useFeatures() {
         return () => { isMounted = false; };
     }, []);
 
-    const hasFeature = useCallback((featureName: string) => {
-        return featureData?.features.includes(featureName) || false;
-    }, [featureData]);
+    // hasFeature agora sempre retorna true (todas liberadas)
+    const hasFeature = useCallback((_featureName: string) => {
+        return true;
+    }, []);
 
     const isTier = useCallback((tierName: string) => {
         return featureData?.tier === tierName;
     }, [featureData]);
 
-    const memoizedFeatures = useMemo(() => featureData?.features || [], [featureData]);
+    const memoizedFeatures = useMemo(() => featureData?.features || ALL_FEATURES, [featureData]);
 
     return {
         tier: featureData?.tier || 'starter',
         features: memoizedFeatures,
         hasFeature,
         isTier,
-        loading
+        loading,
+        usage: featureData?.usage
     };
 }
