@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle, Play, RefreshCw, Info, CheckCircle2, Search, X } from 'lucide-react';
 import { api } from '../services/api';
 import { cn } from '../lib/utils';
@@ -32,6 +32,25 @@ export function SimuladorNFe() {
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [autoFilling, setAutoFilling] = useState(false);
+
+    // Auto-update CFOP based on UF changes
+    useEffect(() => {
+        const defaultCfop = emitenteUf === destinatarioUf ? '5102' : '6102';
+        setItens(prevItens => prevItens.map(item => {
+            if (!item.cfop || item.cfop === '5102' || item.cfop === '6102') {
+                return { ...item, cfop: defaultCfop };
+            }
+            if (item.cfop.length >= 4) {
+                const prefix = emitenteUf === destinatarioUf ? '5' : '6';
+                const firstDigit = item.cfop.charAt(0);
+                const rest = item.cfop.substring(1);
+                if ((prefix === '5' && firstDigit === '6') || (prefix === '6' && firstDigit === '5')) {
+                    return { ...item, cfop: `${prefix}${rest}` };
+                }
+            }
+            return item;
+        }));
+    }, [emitenteUf, destinatarioUf]);
 
     // NCM Search Modal State
     const [isNcmModalOpen, setIsNcmModalOpen] = useState(false);
@@ -69,9 +88,10 @@ export function SimuladorNFe() {
     };
 
     const handleAddItem = () => {
+        const defaultCfop = emitenteUf === destinatarioUf ? '5102' : '6102';
         setItens([
             ...itens,
-            { n_item: itens.length + 1, ncm: '', cfop: '', cst: '', v_prod: 0, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0 }
+            { n_item: itens.length + 1, ncm: '', cfop: defaultCfop, cst: '', v_prod: 0, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0 }
         ]);
     };
 
