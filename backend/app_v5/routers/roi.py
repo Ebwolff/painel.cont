@@ -125,13 +125,23 @@ async def get_roi_summary(response: Response, empresa_id: str = None, user: dict
         res_opp = query_alertas_opp.execute()
         total_recuperacao = sum(float(item.get('diferenca', 0) or 0) for item in (res_opp.data or []))
 
+        # Preparar lista de CNPJs da empresa para filtrar Notas Emitidas
+        query_empresas = user_client.table("empresas").select("cnpj")
+        if empresa_id:
+            query_empresas = query_empresas.eq("id", empresa_id)
+        res_empresas = query_empresas.execute()
+        cnpjs_empresa = [e.get('cnpj') for e in (res_empresas.data or []) if e.get('cnpj')]
+
         # 2. Total de Notas para Cálculo de Transição (Estimativa de Reforma)
-        query_notas = user_client.table("notas_fiscais").select("valor_total")
+        query_notas = user_client.table("notas_fiscais").select("valor_total, emitente_cnpj")
         if empresa_id:
             query_notas = query_notas.eq("empresa_id", empresa_id)
         
         res_notas = query_notas.execute()
-        total_transicao = sum((float(item.get('valor_total', 0) or 0) * 0.01) for item in (res_notas.data or []))
+        total_transicao = 0.0
+        for item in (res_notas.data or []):
+            if item.get('emitente_cnpj') in cnpjs_empresa:
+                total_transicao += (float(item.get('valor_total', 0) or 0) * 0.01)
         
         # 2. Total de Alertas (Glosa)
         query_alertas = user_client.table("alertas_conformidade").select("diferenca").eq("resolvido", False)
