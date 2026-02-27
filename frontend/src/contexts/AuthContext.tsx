@@ -37,23 +37,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Function to clear hash and search params if they contain auth tokens
+        const clearAuthFragments = () => {
+            const hash = window.location.hash;
+            if (hash && (hash.includes('access_token=') || hash.includes('refresh_token='))) {
+                // Remove fragments while keeping the same path
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                console.log('Auth tokens cleared from URL segment');
+            }
+        };
+
         // 1. Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
                 fetchProfile(session.user.id);
+                // Clear URL bits after session is firmly established
+                clearAuthFragments();
             } else {
                 setLoading(false);
             }
         });
 
         // 2. Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
                 fetchProfile(session.user.id);
+                // Clear URL bits on sign-in event
+                if (event === 'SIGNED_IN') {
+                    clearAuthFragments();
+                }
             } else {
                 setProfile(null);
                 setLoading(false);

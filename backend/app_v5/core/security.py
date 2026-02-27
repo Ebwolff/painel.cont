@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Redis Connection for Auth Cache
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-r_auth = redis.Redis.from_url(redis_url, decode_responses=True)
+r_auth = redis.Redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
 
 
 # Define HTTPBearer scheme
@@ -43,19 +43,13 @@ async def get_current_user(token: str = Depends(get_current_token)):
     cache_key = f"auth_token:{token_hash}"
 
     try:
-        # 2. Tentar Cache Redis (Falha Silenciosa)
-        try:
-            cached_user = r_auth.get(cache_key)
-            if cached_user:
-                return json.loads(cached_user)
-        except Exception as redis_err:
-            logger.warning(f"AUTH CACHE: Redis indisponível, recorrendo ao banco. {redis_err}")
-
         # 3. Se não houver cache, buscar no Supabase
+        logger.info(f"AUTH CACHE MISS: Validating token explicitly with Supabase: {token[:10]}...")
         supabase = SupabaseService().get_client_for_user(token)
         user_res = await run_in_threadpool(supabase.auth.get_user, token)
         
         if not user_res.user:
+             logger.error("AUTH ERROR: supabase.auth.get_user returned valid object but no user attached.")
              raise HTTPException(status_code=401, detail="Token inválido ou expirado")
         
         user_info = {
@@ -64,17 +58,12 @@ async def get_current_user(token: str = Depends(get_current_token)):
             "access_token": token
         }
 
-        # 4. Salvar no Cache por 5 minutos (Falha Silenciosa)
-        try:
-            r_auth.setex(cache_key, 300, json.dumps(user_info))
-        except Exception as redis_err:
-            pass # Apenas ignorar se falhar ao salvar
-        
         return user_info
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"AUTH ERROR: {str(e)}")
+        import traceback
+        logger.error(f"AUTH EXCEPTION IN GET_CURRENT_USER: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=401, detail="Falha na autenticação.")
 

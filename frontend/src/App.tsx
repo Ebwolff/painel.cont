@@ -11,6 +11,7 @@ import { Alertas } from './pages/Alertas';
 import { Empresas } from './pages/Empresas';
 import { Login } from './pages/Login';
 import { RelatorioValor } from './pages/RelatorioValor';
+import { SimuladorNFe } from './pages/SimuladorNFe';
 import { Pricing } from './pages/Pricing';
 
 import { TenantsList } from './pages/admin/TenantsList';
@@ -67,6 +68,8 @@ function App() {
                     }>
                         <Route index element={<Dashboard />} />
                         <Route path="valor" element={<RelatorioValor />} />
+                        <Route path="simulador" element={<SimuladorNFe />} />
+                        <Route path="simulador" element={<SimuladorNFe />} />
                         <Route path="upload" element={<Upload />} />
                         <Route path="alertas" element={<Alertas />} />
                         <Route path="empresas" element={<Empresas />} />

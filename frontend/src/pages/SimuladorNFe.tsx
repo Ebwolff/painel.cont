@@ -1,0 +1,235 @@
+import React, { useState } from 'react';
+import { ShieldCheck, AlertTriangle, Play, RefreshCw, Info, CheckCircle2 } from 'lucide-react';
+import { api } from '../services/api';
+import { cn } from '../lib/utils';
+
+const UFS = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
+interface NFeItem {
+    n_item: number;
+    ncm: string;
+    cfop: string;
+    cst: string;
+    v_prod: number;
+}
+
+export function SimuladorNFe() {
+    const [emitenteUf, setEmitenteUf] = useState('SP');
+    const [destinatarioUf, setDestinatarioUf] = useState('SP');
+    const [itens, setItens] = useState<NFeItem[]>([
+        { n_item: 1, ncm: '61091000', cfop: '5102', cst: '00', v_prod: 100.00 }
+    ]);
+    const [result, setResult] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleAddItem = () => {
+        setItens([
+            ...itens,
+            { n_item: itens.length + 1, ncm: '', cfop: '', cst: '', v_prod: 0 }
+        ]);
+    };
+
+    const handleUpdateItem = (index: number, field: keyof NFeItem, value: any) => {
+        const newItens = [...itens];
+        newItens[index] = { ...newItens[index], [field]: value };
+        setItens(newItens);
+    };
+
+    const handleRemoveItem = (index: number) => {
+        setItens(itens.filter((_, i) => i !== index));
+    };
+
+    const handleSimulate = async () => {
+        setLoading(true);
+        try {
+            const response = await api.post('/simulation/validate-nfe', {
+                emitente_uf: emitenteUf,
+                destinatario_uf: destinatarioUf,
+                itens: itens
+            });
+            setResult(response);
+        } catch (error) {
+            console.error("Simulation failed", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-3xl font-bold text-white mb-2 tracking-tighter italic uppercase">Simulador de NFe Compliance</h2>
+                    <p className="text-end-text-sec">Valide a conformidade tributária da nota antes da emissão oficial.</p>
+                </div>
+                <button
+                    onClick={handleSimulate}
+                    disabled={loading}
+                    className="bg-end-accent text-black px-8 py-3 rounded-lg font-black flex items-center gap-2 hover:scale-105 transition-all disabled:opacity-50"
+                >
+                    {loading ? <RefreshCw className="animate-spin" size={20} /> : <Play size={20} />}
+                    EXECUTAR SIMULAÇÃO
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Inputs Section */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-end-card border border-end-border rounded-xl p-6">
+                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <Info size={20} className="text-end-accent" /> Dados da Operação
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div>
+                                <label className="block text-[10px] font-bold text-end-text-sec uppercase mb-1">UF Origem (Emitente)</label>
+                                <select
+                                    value={emitenteUf}
+                                    onChange={(e) => setEmitenteUf(e.target.value)}
+                                    className="w-full bg-white/5 border border-end-border rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-1 focus:ring-end-accent cursor-pointer"
+                                >
+                                    {UFS.map(uf => <option key={uf} value={uf} className="bg-end-card text-white">{uf}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-end-text-sec uppercase mb-1">UF Destino (Destinatário)</label>
+                                <select
+                                    value={destinatarioUf}
+                                    onChange={(e) => setDestinatarioUf(e.target.value)}
+                                    className="w-full bg-white/5 border border-end-border rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-1 focus:ring-end-accent cursor-pointer"
+                                >
+                                    {UFS.map(uf => <option key={uf} value={uf} className="bg-end-card text-white">{uf}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center px-2">
+                                <h4 className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">Itens da Nota</h4>
+                                <button onClick={handleAddItem} className="text-end-accent text-[10px] font-bold hover:underline">+ ADICIONAR ITEM</button>
+                            </div>
+
+                            {itens.map((item, index) => (
+                                <div key={index} className="grid grid-cols-12 gap-2 bg-white/[0.02] border border-white/5 p-4 rounded-lg items-end">
+                                    <div className="col-span-1">
+                                        <p className="text-[10px] text-end-text-sec mb-1">#</p>
+                                        <p className="text-sm font-bold text-white">{item.n_item}</p>
+                                    </div>
+                                    <div className="col-span-3">
+                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">NCM</label>
+                                        <input
+                                            type="text"
+                                            value={item.ncm}
+                                            onChange={(e) => handleUpdateItem(index, 'ncm', e.target.value)}
+                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">CFOP</label>
+                                        <input
+                                            type="text"
+                                            value={item.cfop}
+                                            onChange={(e) => handleUpdateItem(index, 'cfop', e.target.value)}
+                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">CST</label>
+                                        <input
+                                            type="text"
+                                            value={item.cst}
+                                            onChange={(e) => handleUpdateItem(index, 'cst', e.target.value)}
+                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
+                                        />
+                                    </div>
+                                    <div className="col-span-3">
+                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">Valor Prod.</label>
+                                        <input
+                                            type="number"
+                                            value={item.v_prod}
+                                            onChange={(e) => handleUpdateItem(index, 'v_prod', parseFloat(e.target.value))}
+                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono"
+                                        />
+                                    </div>
+                                    <div className="col-span-2 flex justify-end">
+                                        <button onClick={() => handleRemoveItem(index)} className="text-end-error text-[10px] font-bold hover:underline mb-1">REMOVER</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Results Section */}
+                <div className="space-y-6">
+                    {!result ? (
+                        <div className="bg-end-card border border-end-border rounded-xl p-12 text-center border-dashed">
+                            <ShieldCheck size={48} className="text-end-border mx-auto mb-4" />
+                            <p className="text-end-text-sec text-sm">Preencha os dados e execute para ver a conformidade fiscal.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6 animate-in slide-in-from-right duration-500">
+                            {/* Score Card */}
+                            <div className={cn(
+                                "border rounded-xl p-6 text-center shadow-2xl",
+                                result.compliance_score >= 80 ? "bg-end-success/10 border-end-success/30" : "bg-end-error/10 border-end-error/30"
+                            )}>
+                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-70">Compliance Score</p>
+                                <h4 className={cn(
+                                    "text-6xl font-black mb-2",
+                                    result.compliance_score >= 80 ? "text-end-success" : "text-end-error"
+                                )}>
+                                    {result.compliance_score}%
+                                </h4>
+                                <p className="text-sm font-bold text-white uppercase tracking-tighter italic">{result.recomendacao}</p>
+                            </div>
+
+                            {/* Alertas */}
+                            <div className="bg-end-card border border-end-border rounded-xl p-6">
+                                <h3 className="text-[10px] font-black text-end-text-sec uppercase tracking-widest mb-6">Inconsistências Detectadas</h3>
+
+                                {result.alertas.length === 0 ? (
+                                    <div className="flex items-center gap-3 text-end-success">
+                                        <CheckCircle2 size={24} />
+                                        <p className="font-bold text-sm">Nenhuma divergência encontrada!</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {result.alertas.map((alerta: any, idx: number) => (
+                                            <div key={idx} className="bg-white/5 border-l-4 border-end-error p-3 rounded">
+                                                <p className="text-[10px] font-bold text-white mb-1 uppercase tracking-tight">{alerta.tipo.replace('_', ' ')}</p>
+                                                <p className="text-xs text-end-text-sec leading-relaxed">{alerta.mensagem}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Tax Info */}
+                            <div className="bg-end-card border border-end-border rounded-xl p-6">
+                                <h3 className="text-[10px] font-black text-end-text-sec uppercase tracking-widest mb-6">Resumo Estimado (IBS/CBS)</h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] text-end-text-sec uppercase font-bold tracking-tight">Total CBS</span>
+                                        <span className="text-lg font-black text-white">
+                                            {result.items_results.reduce((acc: number, r: any) => acc + (r.tax_values?.cbs || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] text-end-text-sec uppercase font-bold tracking-tight">Total IBS</span>
+                                        <span className="text-lg font-black text-white">
+                                            {result.items_results.reduce((acc: number, r: any) => acc + (r.tax_values?.ibs || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

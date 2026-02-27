@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, UploadCloud, AlertTriangle, Building2,
-    LogOut, Menu, TrendingUp, User, X, Sparkles
+    LogOut, Menu, TrendingUp, User, X, Sparkles, ShieldCheck
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,6 +22,7 @@ export function Layout() {
     const allNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/', feature: null },
         { icon: TrendingUp, label: 'Relatório de Valor', path: '/valor', feature: 'roi_summary' },
+        { icon: ShieldCheck, label: 'Simulador NFe', path: '/simulador', feature: null },
         { icon: UploadCloud, label: 'Upload XML', path: '/upload', feature: 'upload_manual' },
         { icon: AlertTriangle, label: 'Alertas', path: '/alertas', feature: 'basic_monitor' },
         { icon: Building2, label: 'Empresas', path: '/empresas', feature: 'basic_monitor' },

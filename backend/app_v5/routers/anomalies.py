@@ -26,7 +26,7 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
         # 1. Buscar histórico dos últimos 30 dias (Base de comparação)
         data_base = (datetime.now() - timedelta(days=30)).isoformat()
         res_hist = admin_client.table("notas_fiscais")\
-            .select("valor_total, nNF, dhEmi")\
+            .select("valor_total, numero, created_at")\
             .eq("tenant_id", tenant_id)\
             .execute()
         
@@ -36,7 +36,7 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
 
         # Lógica Simples 1: Desvio de Valor Médio
         valores = [float(n['valor_total'] or 0) for n in notas]
-        media = sum(valores) / len(valores)
+        media = sum(valores) / len(valores) if valores else 0
         # Notas com valor > 3x a média são anomalias
         anomalias_valor = [n for n in notas if float(n['valor_total'] or 0) > media * 3]
         
@@ -44,7 +44,7 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
         for anom in anomalias_valor:
             results.append({
                 "tipo": "valor_atípico",
-                "detalhe": f"Nota {anom['nNF']} com valor {float(anom['valor_total']):,.2f} está 3x acima da média do período.",
+                "detalhe": f"Nota {anom.get('numero', 'S/N')} com valor {float(anom['valor_total']):,.2f} está 3x acima da média do período.",
                 "severidade": "alta"
             })
 

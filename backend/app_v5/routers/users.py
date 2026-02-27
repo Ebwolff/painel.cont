@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from app_v5.core.security import get_current_user
 from app_v5.core.supabase_client import SupabaseService
 from pydantic import BaseModel, Field
@@ -26,7 +26,9 @@ class UserUpdate(BaseModel):
     empresa_id: str = None
 
 @router.get("/my-tenant", summary="Listar usuários do meu tenant")
-async def list_my_tenant_users(user = Depends(get_current_user)):
+async def list_my_tenant_users(response: Response, user = Depends(get_current_user)):
+    # Prevent caching of sensitive user list data
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     # 1. Obter tenant_id do usuário atual
     # O get_current_user já retorna o usuário autenticado, mas precisamos do perfil para saber o tenant_id
     # Vamos assumir que get_current_user retorna o objeto User do Supabase Auth

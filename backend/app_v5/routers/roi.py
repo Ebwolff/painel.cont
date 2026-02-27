@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
 from datetime import datetime, timedelta
@@ -11,7 +11,9 @@ router = APIRouter()
 supabase_service = SupabaseService()
 
 @router.get("/strategic-intel", summary="Indicadores Estratégicos de BI")
-async def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_current_user)):
+async def get_strategic_intel(response: Response, empresa_id: str = None, user: dict = Depends(get_current_user)):
+    # Prevent caching of sensitive BI data
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     """
     Gera indicadores de alto nível para o BI do contador.
     """
@@ -96,7 +98,9 @@ async def get_strategic_intel(empresa_id: str = None, user: dict = Depends(get_c
 
 
 @router.get("/summary", summary="Relatório de ROI e Valor Realizado")
-async def get_roi_summary(empresa_id: str = None, user: dict = Depends(get_current_user)):
+async def get_roi_summary(response: Response, empresa_id: str = None, user: dict = Depends(get_current_user)):
+    # Prevent caching of sensitive ROI data
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     """
     Calcula o ROI consolidado.
     """

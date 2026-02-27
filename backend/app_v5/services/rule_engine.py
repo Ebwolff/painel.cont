@@ -21,9 +21,14 @@ class RuleEngineService:
         self._rules_cache: List[Dict] = []
         self._cache_loaded = False
         
-        # Redis Connection
+        # Redis Connection with short timeouts for local fallback
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-        self.redis = redis.Redis.from_url(redis_url, decode_responses=True)
+        self.redis = redis.Redis.from_url(
+            redis_url, 
+            decode_responses=True,
+            socket_connect_timeout=1,
+            socket_timeout=1
+        )
         self.cache_key = "rules_matrix_active"
 
 
@@ -175,6 +180,7 @@ class RuleEngineService:
         }
 
         results_flags = {tax: True for tax in tax_map.keys()}
+        tax_values = {tax: 0.0 for tax in tax_map.keys()}
 
         for rule in rules:
             rule_type = rule.get("rule_type")
@@ -184,6 +190,7 @@ class RuleEngineService:
             field_name = tax_map[rule_type]
             expected_rate = float(rule.get("expected_rate", 0))
             expected_value = round(v_prod * expected_rate, 2)
+            tax_values[rule_type] = expected_value
             severity = rule.get("severity", "media")
             category = rule.get("category", "compliance")
             
@@ -220,6 +227,7 @@ class RuleEngineService:
             "cfop": cfop,
             "cst": cst,
             "validation_results": results_flags,
+            "tax_values": tax_values,
             "alertas": alertas
         }
 

@@ -10,6 +10,7 @@ export function RelatorioValor() {
     const [roiData, setRoiData] = useState<any>(null);
     const [intelData, setIntelData] = useState<any>(null);
     const [simulation, setSimulation] = useState<any>(null);
+    const [customRate, setCustomRate] = useState<number>(27.5);
     const [loading, setLoading] = useState(true);
     const { hasFeature, tier } = useFeatures();
 
@@ -32,16 +33,17 @@ export function RelatorioValor() {
         fetchInitialData();
     }, []);
 
-    async function fetchData(empresaId: string = '') {
+    async function fetchData(empresaId: string = '', rate: number = 27.5) {
         setLoading(true);
         try {
             const suffix = empresaId ? `?empresa_id=${empresaId}` : '';
-            console.log(`Fetching RelatorioValor data for ${empresaId || 'all'}...`);
+            const rateParam = `&custom_rate=${rate}`;
+            const queryParams = suffix ? `${suffix}${rateParam}` : `?${rateParam.substring(1)}`;
 
             const [roiDataRes, intelDataRes, simulationRes] = await Promise.all([
                 api.get(`/roi/summary${suffix}`),
                 api.get(`/roi/strategic-intel${suffix}`),
-                hasFeature('tax_reform_simulator') ? api.get(`/simulation/reform-impact${suffix}`) : Promise.resolve(null)
+                hasFeature('tax_reform_simulator') ? api.get(`/simulation/reform-impact${queryParams}`) : Promise.resolve(null)
             ]);
 
             console.log("ROI Res:", roiDataRes);
@@ -61,7 +63,16 @@ export function RelatorioValor() {
     const handleEmpresaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         setSelectedEmpresa(value);
-        fetchData(value);
+        fetchData(value, customRate);
+    };
+
+    const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseFloat(e.target.value);
+        setCustomRate(val);
+    };
+
+    const handleApplyRate = () => {
+        fetchData(selectedEmpresa, customRate);
     };
 
     useEffect(() => {
@@ -256,9 +267,33 @@ export function RelatorioValor() {
             {hasFeature('tax_reform_simulator') && simulation && (
                 <div className="bg-end-card border border-end-border rounded-xl p-8 print:border-gray-300">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                        <div>
+                        <div className="flex-1">
                             <h4 className="text-xl font-black text-white print:text-black mb-2 uppercase italic tracking-tighter">Simulador de Reforma Tributária</h4>
-                            <p className="text-end-text-sec text-xs">Projeção baseada no faturamento real dos últimos {simulation.periodo_dias} dias: <span className="text-white font-bold">{simulation.total_faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
+                            <p className="text-end-text-sec text-xs mb-4">Projeção baseada no faturamento real dos últimos {simulation.periodo_dias} dias.</p>
+
+                            {/* Interactivity Controls */}
+                            <div className="bg-white/5 p-4 rounded-lg border border-white/10 max-w-sm">
+                                <label className="block text-[10px] font-bold text-end-text-sec uppercase mb-3 flex justify-between">
+                                    Ajustar Alíquota Nominal (IVA) <span>{customRate}%</span>
+                                </label>
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="range"
+                                        min="15"
+                                        max="35"
+                                        step="0.5"
+                                        value={customRate}
+                                        onChange={handleRateChange}
+                                        className="flex-1 accent-end-accent"
+                                    />
+                                    <button
+                                        onClick={handleApplyRate}
+                                        className="bg-end-accent text-black text-[10px] font-black px-3 py-1.5 rounded hover:scale-105 transition-all"
+                                    >
+                                        SIMULAR
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div className="bg-end-success/10 border border-end-success/20 rounded-lg p-3">
                             <p className="text-[10px] font-bold text-end-success uppercase mb-1">Economia em 2028</p>

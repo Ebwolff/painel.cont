@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
 import redis
@@ -12,8 +12,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 supabase_service = SupabaseService()
 
+# Redis Configuration for caching
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+r = redis.Redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
+
 @router.get("/current-company", summary="Métricas para o Termômetro de Risco")
-def get_dashboard_metrics(user: dict = Depends(get_current_user)):
+def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_user)):
+    # Prevent caching of sensitive metrics data
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     logger.info("DASHBOARD: Iniciando fetching de métricas...")
     """
     Retorna os KPIs principais para o dashboard da empresa buscando no Supabase.
@@ -34,6 +40,7 @@ def get_dashboard_metrics(user: dict = Depends(get_current_user)):
         role = profile.get('role')
         empresa_id = profile.get('empresa_id')
         tenant_id = profile.get('tenant_id')
+        cache_key = f"dash_metrics_{tenant_id}_{empresa_id or 'all'}"
         
         logger.info(f"DASHBOARD: User={user_id}, Tenant={tenant_id}, Role={role}")
 

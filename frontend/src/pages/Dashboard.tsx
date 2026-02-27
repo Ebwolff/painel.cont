@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RiskThermometer } from '../components/RiskThermometer';
-import { TrendingUp, AlertOctagon, FileText } from 'lucide-react';
+import { TrendingUp, AlertOctagon, FileText, ShieldCheck } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { cn } from '../lib/utils';
@@ -28,6 +28,7 @@ export function Dashboard() {
     const navigate = useNavigate();
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [roiData, setRoiData] = useState<any>(null);
+    const [assistedData, setAssistedData] = useState<any>(null);
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [anomalies, setAnomalies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,11 +40,12 @@ export function Dashboard() {
         async function fetchMetrics() {
             try {
                 console.log("Fetching dashboard metrics...");
-                const [metricsData, roiDataRes, alertsDataRes, anomalyDataRes] = await Promise.all([
+                const [metricsData, roiDataRes, alertsDataRes, anomalyDataRes, assistedRes] = await Promise.all([
                     api.get('/dashboard/current-company').catch(e => ({ error: true, message: e.message })),
                     api.get('/roi/summary').catch(e => ({ error: true })),
                     api.get('/alerts').catch(e => []),
-                    hasFeature('ai_anomaly_detection') ? api.get('/anomalies/detect').catch(e => ({ anomalies: [] })) : Promise.resolve({ anomalies: [] })
+                    hasFeature('ai_anomaly_detection') ? api.get('/anomalies/detect').catch(e => ({ anomalies: [] })) : Promise.resolve({ anomalies: [] }),
+                    api.get('/simulation/assisted-calculation').catch(e => null)
                 ]);
 
                 console.log("Metrics received:", metricsData);
@@ -51,6 +53,10 @@ export function Dashboard() {
                 // Defensive check for metrics
                 if (metricsData && !metricsData.error) {
                     setMetrics(metricsData);
+                }
+
+                if (assistedRes) {
+                    setAssistedData(assistedRes);
                 }
 
                 // Defensive check for ROI
@@ -144,6 +150,28 @@ export function Dashboard() {
                             </div>
                         </div>
                         <span className="bg-end-error/20 text-end-error text-[9px] px-2 py-0.5 rounded font-black border border-end-error/30 lowercase italic">enterprise</span>
+                    </div>
+                )}
+
+                {/* Assisted Calculation Preview */}
+                {assistedData && (
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                                <ShieldCheck size={24} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] uppercase font-bold text-end-text-sec tracking-wider">Apuração Assistida (Pré-Guia)</p>
+                                <p className="text-xl font-black text-white">
+                                    {(assistedData.consolidado.total_tributos || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                                <p className="text-[11px] text-end-text-sec italic">Baseado em notas validadas este mês</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] text-end-text-sec uppercase mb-1">Alíquota Efetiva</p>
+                            <p className="text-sm font-bold text-end-accent">{assistedData.aliquota_efetiva}%</p>
+                        </div>
                     </div>
                 )}
             </div>
