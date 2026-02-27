@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, AlertTriangle, Play, RefreshCw, Info, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Play, RefreshCw, Info, CheckCircle2, Search, X } from 'lucide-react';
 import { api } from '../services/api';
 import { cn } from '../lib/utils';
 
@@ -32,6 +32,41 @@ export function SimuladorNFe() {
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [autoFilling, setAutoFilling] = useState(false);
+
+    // NCM Search Modal State
+    const [isNcmModalOpen, setIsNcmModalOpen] = useState(false);
+    const [ncmSearchQuery, setNcmSearchQuery] = useState('');
+    const [ncmSearchResults, setNcmSearchResults] = useState<any[]>([]);
+    const [isSearchingNcm, setIsSearchingNcm] = useState(false);
+    const [activeNcmItemIndex, setActiveNcmItemIndex] = useState<number | null>(null);
+
+    const handleSearchNcm = async () => {
+        if (!ncmSearchQuery || ncmSearchQuery.length < 3) return;
+        setIsSearchingNcm(true);
+        try {
+            const res = await fetch(`https://brasilapi.com.br/api/ncm/v1?search=${encodeURIComponent(ncmSearchQuery)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setNcmSearchResults(data.slice(0, 10)); // Limit to top 10 results
+            } else {
+                setNcmSearchResults([]);
+            }
+        } catch (error) {
+            console.error("Failed to search NCM", error);
+            setNcmSearchResults([]);
+        } finally {
+            setIsSearchingNcm(false);
+        }
+    };
+
+    const handleSelectNcm = (ncmCodigo: string) => {
+        if (activeNcmItemIndex !== null) {
+            handleUpdateItem(activeNcmItemIndex, 'ncm', ncmCodigo);
+        }
+        setIsNcmModalOpen(false);
+        setNcmSearchQuery('');
+        setNcmSearchResults([]);
+    };
 
     const handleAddItem = () => {
         setItens([
@@ -162,13 +197,24 @@ export function SimuladorNFe() {
                                             <p className="text-sm font-bold text-white">{item.n_item}</p>
                                         </div>
                                         <div className="col-span-3">
-                                            <label className="block text-[9px] text-end-text-sec uppercase mb-1">NCM</label>
-                                            <input
-                                                type="text"
-                                                value={item.ncm}
-                                                onChange={(e) => handleUpdateItem(index, 'ncm', e.target.value)}
-                                                className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
-                                            />
+                                            <div className="flex items-center gap-1">
+                                                <label className="block text-[9px] text-end-text-sec uppercase mb-1">NCM</label>
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={item.ncm}
+                                                    onChange={(e) => handleUpdateItem(index, 'ncm', e.target.value)}
+                                                    className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 pr-8 text-xs text-white"
+                                                />
+                                                <button
+                                                    onClick={() => { setActiveNcmItemIndex(index); setIsNcmModalOpen(true); }}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-end-text-sec hover:text-end-accent"
+                                                    title="Buscar NCM"
+                                                >
+                                                    <Search size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[9px] text-end-text-sec uppercase mb-1">CFOP</label>
@@ -305,6 +351,63 @@ export function SimuladorNFe() {
                     )}
                 </div>
             </div>
+
+            {/* NCM Search Modal */}
+            {isNcmModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-end-card border border-end-border rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-end-border flex justify-between items-center bg-white/[0.02]">
+                            <h3 className="font-bold text-white flex items-center gap-2"><Search size={18} className="text-end-accent" /> Buscar NCM por Produto</h3>
+                            <button onClick={() => setIsNcmModalOpen(false)} className="text-end-text-sec hover:text-white transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={ncmSearchQuery}
+                                    onChange={(e) => setNcmSearchQuery(e.target.value)}
+                                    placeholder="Ex: Computador, Cadeira, Tomate..."
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearchNcm()}
+                                    className="flex-1 bg-black/50 border border-end-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-end-accent"
+                                    autoFocus
+                                />
+                                <button
+                                    onClick={handleSearchNcm}
+                                    disabled={isSearchingNcm || ncmSearchQuery.length < 3}
+                                    className="bg-end-accent text-black px-4 py-2 rounded-lg font-bold disabled:opacity-50 flex items-center gap-2 hover:opacity-90 transition-opacity"
+                                >
+                                    {isSearchingNcm ? <RefreshCw size={18} className="animate-spin" /> : 'Buscar'}
+                                </button>
+                            </div>
+
+                            <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                {ncmSearchResults.length === 0 && ncmSearchQuery && !isSearchingNcm && (
+                                    <p className="text-center text-end-text-sec py-8 text-sm italic">Nenhum resultado encontrado. Tente outro termo.</p>
+                                )}
+
+                                {ncmSearchResults.map((ncm) => (
+                                    <div
+                                        key={ncm.codigo}
+                                        onClick={() => handleSelectNcm(ncm.codigo)}
+                                        className="bg-white/5 border border-white/10 p-3 rounded-lg hover:border-end-accent cursor-pointer transition-all group"
+                                    >
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div className="flex-1">
+                                                <p className="text-sm text-white font-medium break-words leading-tight">{ncm.descricao}</p>
+                                            </div>
+                                            <span className="bg-end-accent/20 text-end-accent font-mono text-xs font-bold px-2 py-1 rounded shrink-0 group-hover:bg-end-accent group-hover:text-black transition-colors">
+                                                {ncm.codigo}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
