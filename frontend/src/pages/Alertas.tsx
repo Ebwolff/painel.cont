@@ -155,7 +155,7 @@ export function Alertas() {
                 </div>
             )}
 
-            <div className="bg-end-card border border-end-border rounded-lg overflow-hidden">
+            <div className="bg-end-card border border-end-border rounded-lg overflow-visible">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-white/5 border-b border-end-border">

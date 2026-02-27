@@ -71,7 +71,7 @@ export function RegrasFiscais() {
                 </div>
             </div>
 
-            <div className="bg-end-card border border-end-border rounded-lg overflow-hidden">
+            <div className="bg-end-card border border-end-border rounded-lg overflow-visible">
                 <div className="p-4 border-b border-end-border bg-white/[0.02]">
                     <div className="relative max-w-sm">
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-end-text-sec" />

@@ -153,7 +153,7 @@ export function TenantsList() {
             </div>
 
             {/* Table */}
-            <div className="bg-end-card border border-end-border rounded-xl overflow-hidden">
+            <div className="bg-end-card border border-end-border rounded-xl overflow-visible">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-white/5 border-b border-white/10">
