@@ -263,7 +263,7 @@ export function TenantsList() {
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Novo Escritório</h3>
+                        <h2 className="text-xl font-bold text-white mb-6">Novo Escritório</h2>
                         <form onSubmit={handleCreateTenant} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Razão Social</label>
@@ -286,7 +286,7 @@ export function TenantsList() {
             {isEditModalOpen && editingTenant && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Editar Escritório</h3>
+                        <h2 className="text-xl font-bold text-white mb-6">Editar Escritório</h2>
                         <form onSubmit={handleUpdateTenant} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Razão Social</label>

@@ -235,7 +235,7 @@ export function Dashboard() {
                 <div className="bg-end-card border border-end-border p-5 rounded-lg">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-end-text-sec text-sm font-medium">Notas Recebidas</span>
-                        <FileText className="text-purple-500" size={20} />
+                        <FileText className="text-teal-500" size={20} />
                     </div>
                     <div className="text-2xl font-bold text-white">
                         {stats.notas_recebidas}

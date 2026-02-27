@@ -103,7 +103,7 @@ export function RelatorioValor() {
             {/* Executive Print Header (Only visible on PDF) */}
             <div className="hidden print:flex items-center justify-between mb-12 border-b-2 border-end-accent pb-6">
                 <div>
-                    <h1 className="text-2xl font-black text-black">END MONITOR CONTÁBIL</h1>
+                    <p className="text-2xl font-black text-black">END MONITOR CONTÁBIL</p>
                     <p className="text-sm font-bold text-end-accent uppercase tracking-tighter">Relatório Estratégico de Valor</p>
                 </div>
                 <div className="text-right">
@@ -117,27 +117,27 @@ export function RelatorioValor() {
                 <div className="bg-end-card border border-end-border rounded-xl p-5 print:border-gray-200">
                     <p className="text-[10px] font-bold text-end-text-sec print:text-gray-500 uppercase mb-4">Índice de Risco</p>
                     <div className="flex items-end justify-between">
-                        <h4 className={cn("text-3xl font-black", intelData?.indice_risco > 50 ? "text-end-error" : "text-end-success")}>
+                        <p className={cn("text-3xl font-black", intelData?.indice_risco > 50 ? "text-end-error" : "text-end-success")}>
                             {intelData?.indice_risco}%
-                        </h4>
+                        </p>
                         <span className="text-[10px] text-end-text-sec print:text-gray-400 mb-1">Média Global</span>
                     </div>
                 </div>
                 <div className="bg-end-card border border-end-border rounded-xl p-5 print:border-gray-200">
                     <p className="text-[10px] font-bold text-end-text-sec print:text-gray-500 uppercase mb-4">Inconsistência</p>
                     <div className="flex items-end justify-between">
-                        <h4 className="text-3xl font-black text-white print:text-black">
+                        <p className="text-3xl font-black text-white print:text-black">
                             {(intelData?.percentual_inconsistencia || 0).toFixed(1)}%
-                        </h4>
+                        </p>
                         <span className="text-[10px] text-end-text-sec print:text-gray-400 mb-1">Vol. XMLs</span>
                     </div>
                 </div>
                 <div className="bg-end-card border border-end-border rounded-xl p-5 print:border-gray-200">
                     <p className="text-[10px] font-bold text-end-text-sec print:text-gray-500 uppercase mb-4">Potencial de Glosa</p>
                     <div className="flex items-end justify-between">
-                        <h4 className="text-3xl font-black text-end-warning">
+                        <p className="text-3xl font-black text-end-warning">
                             {glosaFormatada}
-                        </h4>
+                        </p>
                     </div>
                 </div>
                 <div className="bg-end-card border border-end-border rounded-xl p-5 print:border-gray-200">
@@ -169,9 +169,9 @@ export function RelatorioValor() {
 
                     <div className="relative z-10">
                         <span className="text-end-accent font-bold uppercase tracking-widest text-xs">Total de Valor Identificado</span>
-                        <h3 className="text-5xl font-black text-white print:text-black mt-4 tracking-tighter">
+                        <p className="text-5xl font-black text-white print:text-black mt-4 tracking-tighter">
                             {totalFormatado}
-                        </h3>
+                        </p>
                         <p className="text-end-text-sec print:text-gray-600 mt-4 max-w-md">
                             Este montante representa o impacto financeiro direto da auditoria automatizada: créditos identificados e multas evitadas.
                         </p>
@@ -198,7 +198,7 @@ export function RelatorioValor() {
                 {/* ROI Breakdown Card */}
                 <div className="bg-end-card border border-end-border rounded-xl p-6 flex flex-col justify-between print:border-gray-300">
                     <div>
-                        <h4 className="text-lg font-bold text-white print:text-black mb-6">Eficiência Consultiva</h4>
+                        <h2 className="text-lg font-bold text-white print:text-black mb-6">Eficiência Consultiva</h2>
                         <div className="space-y-6">
                             <div className="flex items-start gap-3">
                                 <div className="mt-1 text-end-accent"><ShieldCheck size={20} /></div>
@@ -235,12 +235,12 @@ export function RelatorioValor() {
             {/* Comparison Section */}
             <div className="bg-end-card border border-end-border rounded-xl overflow-hidden print:border-gray-300">
                 <div className="p-6 border-b border-end-border print:border-gray-200 flex justify-between items-center">
-                    <h4 className="text-lg font-bold text-white print:text-black">Demonstrativo de Valor</h4>
+                    <h2 className="text-lg font-bold text-white print:text-black">Demonstrativo de Valor</h2>
                     <span className="text-[10px] font-bold text-end-accent uppercase">Auditoria 100% Digital</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2">
                     <div className="p-8 border-r border-end-border bg-white/[0.02] print:border-gray-200 print:bg-gray-50">
-                        <h5 className="text-end-text-sec print:text-gray-500 font-bold uppercase text-[10px] mb-6 tracking-widest">Contabilidade Tradicional (Reativa)</h5>
+                        <p className="text-end-text-sec print:text-gray-500 font-bold uppercase text-[10px] mb-6 tracking-widest">Contabilidade Tradicional (Reativa)</p>
                         <ul className="space-y-4">
                             <li className="flex items-center gap-3 text-sm text-end-text-sec print:text-gray-700">
                                 <AlertCircle size={16} className="text-end-error" /> Conferência manual por amostragem
@@ -254,7 +254,7 @@ export function RelatorioValor() {
                         </ul>
                     </div>
                     <div className="p-8">
-                        <h5 className="text-end-accent font-bold uppercase text-[10px] mb-6 tracking-widest">Modelo END Monitor (Proativo)</h5>
+                        <p className="text-end-accent font-bold uppercase text-[10px] mb-6 tracking-widest">Modelo END Monitor (Proativo)</p>
                         <ul className="space-y-4">
                             <li className="flex items-center gap-3 text-sm text-white print:text-black">
                                 <ShieldCheck size={16} className="text-end-success" /> Conferência de 100% dos XMLs em tempo real
@@ -276,7 +276,7 @@ export function RelatorioValor() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 print:hidden">
                         <div className="flex-1">
                             <div className="flex items-center gap-4 mb-2">
-                                <h4 className="text-xl font-black text-white italic tracking-tighter uppercase">Simulador de Valores e Reforma</h4>
+                                <h2 className="text-xl font-black text-white italic tracking-tighter uppercase">Simulador de Valores e Reforma</h2>
                                 <div className="flex bg-white/5 rounded-md p-1">
                                     <button
                                         onClick={() => setViewMode('cards')}
@@ -510,7 +510,7 @@ export function RelatorioValor() {
 
             {/* Evolução Gráfica (Print Only version of the chart) */}
             <div className="hidden print:block bg-white border border-gray-300 rounded-xl p-8">
-                <h4 className="text-sm font-bold text-black uppercase mb-6 tracking-widest">Histórico de Exposição Fiscal (6 Meses)</h4>
+                <h2 className="text-sm font-bold text-black uppercase mb-6 tracking-widest">Histórico de Exposição Fiscal (6 Meses)</h2>
                 <div className="flex items-end justify-between h-32 gap-4">
                     {intelData?.evolucao_exposicao?.map((item: any, idx: number) => (
                         <div key={idx} className="flex-1 flex flex-col items-center gap-2">
@@ -548,7 +548,7 @@ export function RelatorioValor() {
         <div className="space-y-8 animate-in fade-in duration-500 pb-12 print:p-0 print:space-y-6 relative min-h-[600px]">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
                 <div>
-                    <h2 className="text-3xl font-bold text-white mb-2">Relatório de Valor Realizado</h2>
+                    <h1 className="text-3xl font-bold text-white mb-2">Relatório de Valor Realizado</h1>
                     <div className="flex items-center gap-3">
                         <p className="text-end-text-sec">Análise estratégica de impacto para:</p>
                         <select
@@ -632,7 +632,7 @@ export function RelatorioValor() {
                                     <div className="h-24 w-24 bg-end-accent rounded-2xl rotate-12 flex items-center justify-center mx-auto mb-12 shadow-2xl shadow-end-accent/20">
                                         <TrendingUp size={48} className="text-black -rotate-12" />
                                     </div>
-                                    <h1 className="text-6xl font-black text-white mb-6 tracking-tighter uppercase italic">Diagnóstico e<br />Planejamento Tributário</h1>
+                                    <p className="text-6xl font-black text-white mb-6 tracking-tighter uppercase italic">Diagnóstico e<br />Planejamento Tributário</p>
                                     <p className="text-2xl text-end-text-sec">{companies.find(c => c.id === selectedEmpresa)?.razao_social || 'Escritório Consolidado'}</p>
                                     <div className="mt-12 text-end-text-sec font-bold text-sm tracking-widest uppercase">
                                         Resultados da Auditoria Digital 100%
@@ -648,16 +648,16 @@ export function RelatorioValor() {
                                     <div className="grid grid-cols-2 gap-8">
                                         <div className="bg-end-card border border-end-border p-12 rounded-2xl">
                                             <p className="text-sm font-bold text-end-text-sec uppercase mb-4">Índice de Exposição</p>
-                                            <h3 className={cn("text-8xl font-black mb-4", intelData?.indice_risco > 50 ? "text-end-error" : "text-end-success")}>
+                                            <p className={cn("text-8xl font-black mb-4", intelData?.indice_risco > 50 ? "text-end-error" : "text-end-success")}>
                                                 {intelData?.indice_risco}%
-                                            </h3>
+                                            </p>
                                             <p className="text-xl text-end-text-sec">Das notas fiscais processadas recentemente apresentam problemas estruturais.</p>
                                         </div>
                                         <div className="bg-end-card border border-end-border p-12 rounded-2xl">
                                             <p className="text-sm font-bold text-end-text-sec uppercase mb-4">Potencial de Multas/Glosa Evitado</p>
-                                            <h3 className="text-6xl font-black text-end-warning mb-4">
+                                            <p className="text-6xl font-black text-end-warning mb-4">
                                                 {glosaFormatada}
-                                            </h3>
+                                            </p>
                                             <p className="text-xl text-end-text-sec">Proteção direta para o seu fluxo de caixa via atuação proativa.</p>
                                         </div>
                                     </div>
@@ -672,7 +672,7 @@ export function RelatorioValor() {
                                     <div className="inline-block relative">
                                         <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
                                         <div className="relative bg-end-card border-2 border-blue-500/50 p-16 rounded-[3rem] shadow-2xl">
-                                            <h3 className="text-8xl font-black text-white">{totalFormatado}</h3>
+                                            <p className="text-8xl font-black text-white">{totalFormatado}</p>
                                             <div className="mt-8 flex justify-center gap-12 text-left">
                                                 <div>
                                                     <p className="text-end-text-sec text-sm uppercase font-bold">Créditos de Impostos</p>
@@ -745,7 +745,7 @@ export function RelatorioValor() {
                         <div className="h-20 w-20 bg-end-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-end-accent">
                             <TrendingUp size={40} />
                         </div>
-                        <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Recurso de Alto Valor</h3>
+                        <p className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Recurso de Alto Valor</p>
                         <p className="text-end-text-sec text-lg mb-8">
                             A análise estratégica de ROI e Inteligência de Negócio está disponível exclusivamente nos planos **Monitor Profissional** e **Inteligência Corporativa**.
                         </p>
@@ -763,7 +763,7 @@ export function RelatorioValor() {
             {!isPresentationMode && hasFeature('roi_summary') && (
                 <div className="bg-end-accent rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 print:bg-end-accent print:rounded-xl">
                     <div className="text-black">
-                        <h4 className="text-2xl font-black italic tracking-tighter print:text-black">SUA CONTABILIDADE É UM INVESTIMENTO</h4>
+                        <h2 className="text-2xl font-black italic tracking-tighter print:text-black">SUA CONTABILIDADE É UM INVESTIMENTO</h2>
                         <p className="font-medium text-black/70 print:text-black/80">Este relatório prova que o monitoramento se paga e gera lucro.</p>
                     </div>
                     <button onClick={() => window.print()} className="bg-black text-white px-8 py-3 rounded-md font-bold hover:scale-105 transition-transform flex items-center gap-2 print:hidden">

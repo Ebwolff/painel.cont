@@ -81,7 +81,7 @@ export function AdminDashboard() {
                             {/* <span className="text-xs font-bold bg-white/5 px-2 py-1 rounded text-end-text-sec">+0% mês</span> */}
                         </div>
                         <p className="text-end-text-sec text-xs uppercase font-bold tracking-wider">{stat.label}</p>
-                        <h3 className="text-3xl font-black text-white mt-1">{stat.value}</h3>
+                        <p className="text-3xl font-black text-white mt-1">{stat.value}</p>
                     </div>
                 ))}
             </div>
@@ -90,7 +90,7 @@ export function AdminDashboard() {
                 <div className="bg-end-card border-2 border-end-accent/30 rounded-xl p-6 shadow-[0_0_30px_rgba(235,255,2,0.05)] animate-in zoom-in-95 duration-500">
                     <div className="flex items-center gap-2 mb-6">
                         <div className="w-2 h-2 bg-end-accent rounded-full animate-pulse" />
-                        <h3 className="text-lg font-bold text-white uppercase tracking-tighter italic">Solicitações de Upgrade Pendentes ({requests.length})</h3>
+                        <h2 className="text-lg font-bold text-white uppercase tracking-tighter italic">Solicitações de Upgrade Pendentes ({requests.length})</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {requests.map((req) => (
@@ -124,7 +124,7 @@ export function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-end-card border border-end-border rounded-xl p-6">
-                    <h3 className="text-lg font-bold text-white mb-6">Últimos Escritórios Cadastrados</h3>
+                    <h2 className="text-lg font-bold text-white mb-6">Últimos Escritórios Cadastrados</h2>
                     <div className="space-y-4">
                         {stats?.recent_tenants?.map((tenant) => (
                             <div key={tenant.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
@@ -147,7 +147,7 @@ export function AdminDashboard() {
                 </div>
 
                 <div className="bg-end-card border border-end-border rounded-xl p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">Faturamento por Modelo CNPJ</h3>
+                    <h2 className="text-lg font-bold text-white mb-2">Faturamento por Modelo CNPJ</h2>
                     <p className="text-xs text-end-text-sec mb-6">Precificação incremental — Individual / Starter / Escritório / Enterprise</p>
                     <div className="space-y-4">
                         {[
@@ -185,7 +185,7 @@ export function AdminDashboard() {
                         <RefreshCcw size={32} />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter">Inteligência Fiscal 2.0</h3>
+                        <h2 className="text-xl font-black text-white uppercase tracking-tighter">Inteligência Fiscal 2.0</h2>
                         <p className="text-sm text-end-text-sec">O motor de cruzamento está operando com alíquotas federais atualizadas.</p>
                         <div className="flex items-center gap-4 mt-2">
                             <span className="text-[10px] font-bold text-end-success flex items-center gap-1 uppercase">

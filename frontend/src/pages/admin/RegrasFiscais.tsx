@@ -49,10 +49,10 @@ export function RegrasFiscais() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                         Regras Fiscais (Inteligência 2.0)
                         <span className="text-[10px] bg-end-accent/20 text-end-accent px-2 py-0.5 rounded-full font-black uppercase">Alpha</span>
-                    </h2>
+                    </h1>
                     <p className="text-sm text-end-text-sec italic">Gestão centralizada da Tabela da Verdade (CBS/IBS).</p>
                 </div>
 
@@ -112,7 +112,7 @@ export function RegrasFiscais() {
                                     <td className="p-4">
                                         <div className="text-sm text-white font-mono flex items-center gap-2">
                                             {rule.ncm && <span className="bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded text-[10px]">NCM: {rule.ncm}</span>}
-                                            {rule.cfop && <span className="bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded text-[10px]">CFOP: {rule.cfop}</span>}
+                                            {rule.cfop && <span className="bg-cyan-500/10 text-cyan-400 px-1.5 py-0.5 rounded text-[10px]">CFOP: {rule.cfop}</span>}
                                             {!rule.ncm && !rule.cfop && <span className="text-end-text-sec text-[10px]">Alvo Geral</span>}
                                         </div>
                                     </td>
@@ -122,7 +122,7 @@ export function RegrasFiscais() {
                                             rule.rule_type === 'cbs' ? "bg-orange-500/20 text-orange-400" :
                                                 rule.rule_type === 'ibs' ? "bg-teal-500/20 text-teal-400" :
                                                     rule.rule_type === 'icms' ? "bg-blue-500/20 text-blue-400" :
-                                                        rule.rule_type === 'pis' ? "bg-purple-500/20 text-purple-400" :
+                                                        rule.rule_type === 'pis' ? "bg-cyan-500/20 text-cyan-400" :
                                                             rule.rule_type === 'cofins' ? "bg-pink-500/20 text-pink-400" :
                                                                 "bg-white/10 text-white"
                                         )}>
@@ -168,7 +168,7 @@ export function RegrasFiscais() {
                 <div className="bg-end-accent/5 border border-end-accent/20 rounded-lg p-6 flex gap-4">
                     <AlertCircle className="text-end-accent shrink-0" size={24} />
                     <div>
-                        <h4 className="text-sm font-black text-end-accent uppercase mb-1">Nota Técnica</h4>
+                        <h2 className="text-sm font-black text-end-accent uppercase mb-1">Nota Técnica</h2>
                         <p className="text-xs text-end-text-sec leading-relaxed">
                             A sincronização atualiza as regras globais de transição da Reforma 2026. Regras criadas manualmente ou marcadas como exceções pelo Super Admin têm prioridade sobre as tabelas federais genéricas.
                         </p>
@@ -177,7 +177,7 @@ export function RegrasFiscais() {
                 <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-6 flex gap-4">
                     <ShieldCheck className="text-blue-400 shrink-0" size={24} />
                     <div>
-                        <h4 className="text-sm font-black text-blue-400 uppercase mb-1">Integridade de Cache</h4>
+                        <h2 className="text-sm font-black text-blue-400 uppercase mb-1">Integridade de Cache</h2>
                         <p className="text-xs text-end-text-sec leading-relaxed">
                             Ao salvar alterações ou sincronizar, o motor de regras da API invalidará o cache automaticamente. O próximo processamento de nota usará os dados recém-sincronizados.
                         </p>

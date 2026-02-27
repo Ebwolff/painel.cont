@@ -193,7 +193,7 @@ export function Users() {
                                         {user.nome?.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white max-w-[150px] truncate" title={user.nome}>{user.nome}</h3>
+                                        <p className="font-bold text-white max-w-[150px] truncate" title={user.nome}>{user.nome}</p>
                                         <p className="text-xs text-end-text-sec max-w-[150px] truncate" title={user.email}>{user.email}</p>
                                         {user.role === 'monitor' && user.empresa_id && (
                                             <p className="text-[10px] text-green-400 mt-1">
@@ -202,7 +202,7 @@ export function Users() {
                                         )}
                                     </div>
                                 </div>
-                                <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${user.role === 'admin' ? 'bg-teal-500/20 text-teal-400' :
                                     user.role === 'monitor' ? 'bg-green-500/20 text-green-400' :
                                         'bg-blue-500/20 text-blue-400'
                                     }`}>
@@ -242,7 +242,7 @@ export function Users() {
             {isCreateModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Novo Acesso</h3>
+                        <h2 className="text-xl font-bold text-white mb-6">Novo Acesso</h2>
                         <form onSubmit={handleCreateUser} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Nome Completo</label>
@@ -322,7 +322,7 @@ export function Users() {
             {isEditModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Editar Acesso</h3>
+                        <h2 className="text-xl font-bold text-white mb-6">Editar Acesso</h2>
                         <form onSubmit={handleUpdateUser} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Nome Completo</label>
@@ -377,7 +377,7 @@ export function Users() {
             {isPermModalOpen && editingUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-2">Permissões de {editingUser.nome}</h3>
+                        <h2 className="text-xl font-bold text-white mb-2">Permissões de {editingUser.nome}</h2>
                         <p className="text-sm text-end-text-sec mb-6">O que este usuário pode fazer?</p>
 
                         <div className="space-y-2 mb-6 max-h-[400px] overflow-y-auto pr-2">

@@ -63,7 +63,7 @@ export function ClientDashboard() {
                             <FileText size={60} />
                         </div>
                         <p className="text-end-text-sec text-sm font-medium uppercase mb-1">Total de XMLs</p>
-                        <h3 className="text-3xl font-black text-white">1,245</h3>
+                        <p className="text-3xl font-black text-white">1,245</p>
                         <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
                             <TrendingUp size={12} /> +12% esse mês
                         </p>
@@ -74,7 +74,7 @@ export function ClientDashboard() {
                             <Download size={60} />
                         </div>
                         <p className="text-end-text-sec text-sm font-medium uppercase mb-1">Downloads Realizados</p>
-                        <h3 className="text-3xl font-black text-white">850</h3>
+                        <p className="text-3xl font-black text-white">850</p>
                         <p className="text-xs text-end-text-sec mt-2">Último download hoje</p>
                     </div>
                     {/* Placeholder for more stats */}
@@ -87,7 +87,7 @@ export function ClientDashboard() {
                 {/* Recent Files Section */}
                 <div className="bg-end-card border border-end-border rounded-xl overflow-hidden">
                     <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-white">Arquivos Recentes</h3>
+                        <h2 className="text-lg font-bold text-white">Arquivos Recentes</h2>
                         <button className="text-xs font-bold text-end-accent hover:text-white transition-colors uppercase">Ver Todos</button>
                     </div>
                     <div className="divide-y divide-white/5">

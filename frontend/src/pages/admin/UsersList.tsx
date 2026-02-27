@@ -241,11 +241,11 @@ export function UsersList() {
                                         {user.nome?.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white">{user.nome}</h3>
+                                        <p className="font-bold text-white">{user.nome}</p>
                                         <p className="text-xs text-end-text-sec">{user.email}</p>
                                     </div>
                                 </div>
-                                <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${user.role === 'admin' ? 'bg-teal-500/20 text-teal-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                     {user.role}
                                 </span>
                             </div>
@@ -281,7 +281,7 @@ export function UsersList() {
             {isCreateModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Novo Usuário</h3>
+                        <h2 className="text-xl font-bold text-white mb-6">Novo Usuário</h2>
                         <form onSubmit={handleCreateUser} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Nome Completo</label>
@@ -337,7 +337,7 @@ export function UsersList() {
             {isEditModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Editar Usuário</h3>
+                        <h2 className="text-xl font-bold text-white mb-6">Editar Usuário</h2>
                         <form onSubmit={handleUpdateUser} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Nome Completo</label>
@@ -389,7 +389,7 @@ export function UsersList() {
             {isPermModalOpen && editingUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-2">Permissões de Acesso</h3>
+                        <h2 className="text-xl font-bold text-white mb-2">Permissões de Acesso</h2>
                         <p className="text-sm text-end-text-sec mb-6">Defina o que <strong>{editingUser.nome}</strong> pode fazer.</p>
 
                         <div className="space-y-2 mb-6 max-h-[400px] overflow-y-auto pr-2">

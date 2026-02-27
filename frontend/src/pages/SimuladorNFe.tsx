@@ -155,7 +155,7 @@ export function SimuladorNFe() {
         <div className="space-y-8 animate-in fade-in duration-500 pb-12">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold text-white mb-2 tracking-tighter italic uppercase">Simulador de NFe Compliance</h2>
+                    <h1 className="text-3xl font-bold text-white mb-2 tracking-tighter italic uppercase">Simulador de NFe Compliance</h1>
                     <p className="text-end-text-sec">Valide a conformidade tributária da nota antes da emissão oficial.</p>
                 </div>
                 <button
@@ -200,7 +200,7 @@ export function SimuladorNFe() {
 
                         <div className="space-y-4">
                             <div className="flex justify-between items-center px-2">
-                                <h4 className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">Itens da Nota</h4>
+                                <h3 className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">Itens da Nota</h3>
                                 <div className="flex gap-4">
                                     <button onClick={handleAutoFillAll} disabled={autoFilling} className="text-end-accent text-[10px] font-bold hover:underline disabled:opacity-50 flex items-center gap-1">
                                         {autoFilling ? <RefreshCw className="animate-spin" size={12} /> : '🪄'} AUTO-PREENCHER TRIBUTOS
