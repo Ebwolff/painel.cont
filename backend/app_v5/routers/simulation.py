@@ -169,6 +169,32 @@ async def validate_nfe_mock(request: NFeMockRequest, user: dict = Depends(get_cu
         logger.error(f"SIMULATION: Erro na validação de rascunho: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/auto-fill-taxes", summary="Calcula os impostos esperados para preenchimento automático")
+async def auto_fill_taxes(request: NFeMockRequest, user: dict = Depends(get_current_user)):
+    """
+    Retorna os impostos esperados para cada item da nota com base nas regras cadastradas.
+    """
+    try:
+        data = {
+            "emitente_uf": request.emitente_uf,
+            "destinatario_uf": request.destinatario_uf,
+            "itens": [item.dict() for item in request.itens]
+        }
+        engine = simulation_service.rule_engine
+        result = engine.validate_nfe(data)
+        
+        items_taxes = []
+        for r in result.get("items_results", []):
+            items_taxes.append({
+                "n_item": r.get("n_item"),
+                "tax_values": r.get("tax_values", {})
+            })
+            
+        return {"items_taxes": items_taxes}
+    except Exception as e:
+        logger.error(f"SIMULATION: Erro no auto-fill: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/assisted-calculation", summary="Gera pré-guia de apuração assistida")
 async def get_assisted_calculation(empresa_id: str = None, user: dict = Depends(get_current_user)):

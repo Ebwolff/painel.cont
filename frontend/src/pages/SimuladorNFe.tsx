@@ -31,6 +31,7 @@ export function SimuladorNFe() {
     ]);
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [autoFilling, setAutoFilling] = useState(false);
 
     const handleAddItem = () => {
         setItens([
@@ -57,11 +58,41 @@ export function SimuladorNFe() {
                 destinatario_uf: destinatarioUf,
                 itens: itens
             });
-            setResult(response);
+            setResult(response.data || response); // Support axios config
         } catch (error) {
             console.error("Simulation failed", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAutoFillAll = async () => {
+        setAutoFilling(true);
+        try {
+            const response = await api.post('/simulation/auto-fill-taxes', {
+                emitente_uf: emitenteUf,
+                destinatario_uf: destinatarioUf,
+                itens: itens
+            });
+            const itemsTaxes = response.data?.items_taxes || response.items_taxes;
+
+            const newItens = itens.map((item) => {
+                const taxes = itemsTaxes?.find((t: any) => t.n_item === item.n_item)?.tax_values || {};
+                return {
+                    ...item,
+                    v_icms: taxes.icms || 0,
+                    v_ipi: taxes.ipi || 0,
+                    v_pis: taxes.pis || 0,
+                    v_cofins: taxes.cofins || 0,
+                    v_cbs: taxes.cbs || 0,
+                    v_ibs: taxes.ibs || 0
+                };
+            });
+            setItens(newItens);
+        } catch (error) {
+            console.error("Auto-fill failed", error);
+        } finally {
+            setAutoFilling(false);
         }
     };
 
@@ -115,7 +146,12 @@ export function SimuladorNFe() {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center px-2">
                                 <h4 className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">Itens da Nota</h4>
-                                <button onClick={handleAddItem} className="text-end-accent text-[10px] font-bold hover:underline">+ ADICIONAR ITEM</button>
+                                <div className="flex gap-4">
+                                    <button onClick={handleAutoFillAll} disabled={autoFilling} className="text-end-accent text-[10px] font-bold hover:underline disabled:opacity-50 flex items-center gap-1">
+                                        {autoFilling ? <RefreshCw className="animate-spin" size={12} /> : '🪄'} AUTO-PREENCHER TRIBUTOS
+                                    </button>
+                                    <button onClick={handleAddItem} className="text-white text-[10px] font-bold hover:underline">+ ADICIONAR ITEM</button>
+                                </div>
                             </div>
 
                             {itens.map((item, index) => (
