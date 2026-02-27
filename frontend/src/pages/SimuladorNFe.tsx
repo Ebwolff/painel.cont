@@ -15,13 +15,19 @@ interface NFeItem {
     cfop: string;
     cst: string;
     v_prod: number;
+    v_icms?: number;
+    v_ipi?: number;
+    v_pis?: number;
+    v_cofins?: number;
+    v_cbs?: number;
+    v_ibs?: number;
 }
 
 export function SimuladorNFe() {
     const [emitenteUf, setEmitenteUf] = useState('SP');
     const [destinatarioUf, setDestinatarioUf] = useState('SP');
     const [itens, setItens] = useState<NFeItem[]>([
-        { n_item: 1, ncm: '61091000', cfop: '5102', cst: '00', v_prod: 100.00 }
+        { n_item: 1, ncm: '61091000', cfop: '5102', cst: '00', v_prod: 100.00, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0 }
     ]);
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -29,7 +35,7 @@ export function SimuladorNFe() {
     const handleAddItem = () => {
         setItens([
             ...itens,
-            { n_item: itens.length + 1, ncm: '', cfop: '', cst: '', v_prod: 0 }
+            { n_item: itens.length + 1, ncm: '', cfop: '', cst: '', v_prod: 0, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0 }
         ]);
     };
 
@@ -113,49 +119,82 @@ export function SimuladorNFe() {
                             </div>
 
                             {itens.map((item, index) => (
-                                <div key={index} className="grid grid-cols-12 gap-2 bg-white/[0.02] border border-white/5 p-4 rounded-lg items-end">
-                                    <div className="col-span-1">
-                                        <p className="text-[10px] text-end-text-sec mb-1">#</p>
-                                        <p className="text-sm font-bold text-white">{item.n_item}</p>
+                                <div key={index} className="flex flex-col gap-3 bg-white/[0.02] border border-white/5 p-4 rounded-lg">
+                                    <div className="grid grid-cols-12 gap-2 items-end">
+                                        <div className="col-span-1">
+                                            <p className="text-[10px] text-end-text-sec mb-1">#</p>
+                                            <p className="text-sm font-bold text-white">{item.n_item}</p>
+                                        </div>
+                                        <div className="col-span-3">
+                                            <label className="block text-[9px] text-end-text-sec uppercase mb-1">NCM</label>
+                                            <input
+                                                type="text"
+                                                value={item.ncm}
+                                                onChange={(e) => handleUpdateItem(index, 'ncm', e.target.value)}
+                                                className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
+                                            />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[9px] text-end-text-sec uppercase mb-1">CFOP</label>
+                                            <input
+                                                type="text"
+                                                value={item.cfop}
+                                                onChange={(e) => handleUpdateItem(index, 'cfop', e.target.value)}
+                                                className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
+                                            />
+                                        </div>
+                                        <div className="col-span-1">
+                                            <label className="block text-[9px] text-end-text-sec uppercase mb-1">CST</label>
+                                            <input
+                                                type="text"
+                                                value={item.cst}
+                                                onChange={(e) => handleUpdateItem(index, 'cst', e.target.value)}
+                                                className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
+                                            />
+                                        </div>
+                                        <div className="col-span-3">
+                                            <label className="block text-[9px] text-end-text-sec uppercase mb-1">Valor Prod.</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={item.v_prod}
+                                                onChange={(e) => handleUpdateItem(index, 'v_prod', parseFloat(e.target.value))}
+                                                className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono"
+                                            />
+                                        </div>
+                                        <div className="col-span-2 flex justify-end">
+                                            <button onClick={() => handleRemoveItem(index)} className="text-end-error text-[10px] font-bold hover:underline mb-1">REMOVER</button>
+                                        </div>
                                     </div>
-                                    <div className="col-span-3">
-                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">NCM</label>
-                                        <input
-                                            type="text"
-                                            value={item.ncm}
-                                            onChange={(e) => handleUpdateItem(index, 'ncm', e.target.value)}
-                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">CFOP</label>
-                                        <input
-                                            type="text"
-                                            value={item.cfop}
-                                            onChange={(e) => handleUpdateItem(index, 'cfop', e.target.value)}
-                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
-                                        />
-                                    </div>
-                                    <div className="col-span-1">
-                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">CST</label>
-                                        <input
-                                            type="text"
-                                            value={item.cst}
-                                            onChange={(e) => handleUpdateItem(index, 'cst', e.target.value)}
-                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white"
-                                        />
-                                    </div>
-                                    <div className="col-span-3">
-                                        <label className="block text-[9px] text-end-text-sec uppercase mb-1">Valor Prod.</label>
-                                        <input
-                                            type="number"
-                                            value={item.v_prod}
-                                            onChange={(e) => handleUpdateItem(index, 'v_prod', parseFloat(e.target.value))}
-                                            className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono"
-                                        />
-                                    </div>
-                                    <div className="col-span-2 flex justify-end">
-                                        <button onClick={() => handleRemoveItem(index)} className="text-end-error text-[10px] font-bold hover:underline mb-1">REMOVER</button>
+
+                                    <div className="grid grid-cols-12 gap-2 items-end border-t border-white/5 pt-3 mt-1">
+                                        <div className="col-span-12">
+                                            <p className="text-[9px] font-bold text-end-accent uppercase mb-1 opacity-80">Impostos Destacados na Nota (R$)</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">ICMS</label>
+                                            <input type="number" step="0.01" value={item.v_icms ?? 0} onChange={(e) => handleUpdateItem(index, 'v_icms', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">IPI</label>
+                                            <input type="number" step="0.01" value={item.v_ipi ?? 0} onChange={(e) => handleUpdateItem(index, 'v_ipi', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">PIS</label>
+                                            <input type="number" step="0.01" value={item.v_pis ?? 0} onChange={(e) => handleUpdateItem(index, 'v_pis', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">COFINS</label>
+                                            <input type="number" step="0.01" value={item.v_cofins ?? 0} onChange={(e) => handleUpdateItem(index, 'v_cofins', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">CBS</label>
+                                            <input type="number" step="0.01" value={item.v_cbs ?? 0} onChange={(e) => handleUpdateItem(index, 'v_cbs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">IBS</label>
+                                            <input type="number" step="0.01" value={item.v_ibs ?? 0} onChange={(e) => handleUpdateItem(index, 'v_ibs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
                                     </div>
                                 </div>
                             ))}

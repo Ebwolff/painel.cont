@@ -24,6 +24,10 @@ class NFeItemMock(BaseModel):
     v_prod: float = Field(..., description="Valor do produto")
     v_cbs: float = 0.0
     v_ibs: float = 0.0
+    v_icms: float = 0.0
+    v_ipi: float = 0.0
+    v_pis: float = 0.0
+    v_cofins: float = 0.0
 
 class NFeMockRequest(BaseModel):
     emitente_uf: str
