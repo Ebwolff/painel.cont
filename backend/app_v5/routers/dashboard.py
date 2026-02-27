@@ -65,9 +65,7 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
         # mantendo a segurança via filtro de tenant_id validado.
         admin_client = supabase_service.get_service_client()
         
-        query_notas = admin_client.table("notas_fiscais").select("id", count="exact").eq("tenant_id", tenant_id).gte("created_at", data_limite)
-        query_erro = admin_client.table("notas_fiscais").select("id", count="exact").eq("tenant_id", tenant_id).eq("status", "irregular").gte("created_at", data_limite)
-        query_valor = admin_client.table("notas_fiscais").select("valor_total").eq("tenant_id", tenant_id).gte("created_at", data_limite)
+        query_notas = admin_client.table("notas_fiscais").select("id, status, valor_total, emitente_cnpj, destinatario_cnpj").eq("tenant_id", tenant_id).gte("created_at", data_limite)
         
         # FILTRO DE MONITOR
         if role == 'monitor':
@@ -76,26 +74,44 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
                     "empresa_id": None,
                     "risco_score": 0,
                     "total_notas": 0,
+                    "notas_emitidas": 0,
+                    "notas_recebidas": 0,
                     "notas_com_erro": 0,
                     "valor_bens_servicos": 0,
                     "credito_tributario_potencial": 0,
                     "status": "seguro"
                 }
             query_notas = query_notas.eq("empresa_id", empresa_id)
-            query_erro = query_erro.eq("empresa_id", empresa_id)
-            query_valor = query_valor.eq("empresa_id", empresa_id)
         
         # Executar Queries
         try:
-            total_res = query_notas.execute()
-            total_notas = total_res.count if total_res.count is not None else 0
+            # 1. Fetching Cnpjs para classificar emissão vs recebimento
+            query_empresas = admin_client.table("empresas").select("cnpj").eq("tenant_id", tenant_id)
+            if role == 'monitor' and empresa_id:
+                query_empresas = query_empresas.eq("id", empresa_id)
+            cnpjs_empresa = [e.get('cnpj') for e in (query_empresas.execute().data or []) if e.get('cnpj')]
             
-            erro_res = query_erro.execute()
-            notas_com_erro = erro_res.count if erro_res.count is not None else 0
+            # 2. Fetching Notas
+            res_notas = query_notas.execute()
+            notas_data = res_notas.data or []
             
-            # Para o valor total, buscamos apenas os valores necessários
-            valor_res = query_valor.execute()
-            valor_total_soma = sum([float(item.get('valor_total', 0) or 0) for item in (valor_res.data or [])])
+            total_notas = len(notas_data)
+            notas_emitidas = 0
+            notas_recebidas = 0
+            notas_com_erro = 0
+            valor_total_soma = 0.0
+            
+            for nota in notas_data:
+                valor_total_soma += float(nota.get('valor_total') or 0.0)
+                is_erro = nota.get('status') == 'irregular'
+                
+                if is_erro:
+                    notas_com_erro += 1
+                    
+                if nota.get('emitente_cnpj') in cnpjs_empresa:
+                    notas_emitidas += 1
+                else:
+                    notas_recebidas += 1
             
             # Cálculo de Glosa e Créditos via query de alertas
             # Glosa = Erros de Compliance (Risco)
@@ -120,6 +136,8 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
                 "empresa_id": empresa_id if role == 'monitor' else tenant_id, 
                 "risco_score": risco_score,
                 "total_notas": total_notas,
+                "notas_emitidas": notas_emitidas,
+                "notas_recebidas": notas_recebidas,
                 "notas_com_erro": notas_com_erro,
                 "valor_bens_servicos": round(valor_total_soma, 2),
                 "credito_tributario_potencial": round(total_creditos, 2),
@@ -140,6 +158,8 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
                 "empresa_id": empresa_id if role == 'monitor' else tenant_id, 
                 "risco_score": 0,
                 "total_notas": 0,
+                "notas_emitidas": 0,
+                "notas_recebidas": 0,
                 "notas_com_erro": 0,
                 "valor_bens_servicos": 0,
                 "credito_tributario_potencial": 0,
@@ -152,6 +172,8 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
             "empresa_id": None, 
             "risco_score": 0,
             "total_notas": 0,
+            "notas_emitidas": 0,
+            "notas_recebidas": 0,
             "notas_com_erro": 0,
             "valor_bens_servicos": 0,
             "credito_tributario_potencial": 0,

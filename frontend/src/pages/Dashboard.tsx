@@ -9,6 +9,8 @@ import { useFeatures } from '../hooks/useFeatures';
 interface DashboardMetrics {
     risco_score: number;
     total_notas: number;
+    notas_emitidas: number;
+    notas_recebidas: number;
     notas_com_erro: number;
     valor_bens_servicos: number;
     credito_tributario_potencial: number;
@@ -107,6 +109,8 @@ export function Dashboard() {
     const stats = {
         risco_score: metrics?.risco_score ?? 0,
         total_notas: metrics?.total_notas ?? 0,
+        notas_emitidas: metrics?.notas_emitidas ?? 0,
+        notas_recebidas: metrics?.notas_recebidas ?? 0,
         notas_com_erro: metrics?.notas_com_erro ?? 0,
         valor_bens_servicos: metrics?.valor_bens_servicos ?? 0,
         credito_tributario_potencial: metrics?.credito_tributario_potencial ?? 0,
@@ -194,7 +198,7 @@ export function Dashboard() {
             )}
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-end-card border border-end-border p-5 rounded-lg border-l-4 border-l-blue-500 shadow-lg shadow-blue-500/5">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-end-text-sec text-sm font-medium uppercase tracking-wider">Recuperação Tributária</span>
@@ -219,13 +223,24 @@ export function Dashboard() {
 
                 <div className="bg-end-card border border-end-border p-5 rounded-lg">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-end-text-sec text-sm font-medium">Total Processado (Mês)</span>
+                        <span className="text-end-text-sec text-sm font-medium">Notas Emitidas</span>
                         <FileText className="text-blue-500" size={20} />
                     </div>
                     <div className="text-2xl font-bold text-white">
-                        {stats.total_notas}
+                        {stats.notas_emitidas}
                     </div>
-                    <div className="text-xs text-end-text-sec mt-1">Processadas no último mês</div>
+                    <div className="text-xs text-end-text-sec mt-1">Saídas processadas (Mês)</div>
+                </div>
+
+                <div className="bg-end-card border border-end-border p-5 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-end-text-sec text-sm font-medium">Notas Recebidas</span>
+                        <FileText className="text-purple-500" size={20} />
+                    </div>
+                    <div className="text-2xl font-bold text-white">
+                        {stats.notas_recebidas}
+                    </div>
+                    <div className="text-xs text-end-text-sec mt-1">Entradas processadas (Mês)</div>
                 </div>
             </div>
 
