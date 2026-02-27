@@ -95,6 +95,11 @@ export function Login() {
                                 {error}
                             </div>
                         )}
+                        <div className="hidden">
+                            <input type="text" name="fake-user" autoComplete="username" tabIndex={-1} aria-hidden="true" />
+                            <input type="password" name="fake-pass" autoComplete="new-password" tabIndex={-1} aria-hidden="true" />
+                        </div>
+
                         <div>
                             <label className="block text-xs font-bold text-end-text-sec uppercase mb-2 tracking-wider">Email Corporativo</label>
                             <div className="relative group">
@@ -107,7 +112,7 @@ export function Login() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="seu@email.com"
-                                    autoComplete="off"
+                                    autoComplete="one-time-code"
                                     className="block w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-end-text-sec/30 focus:outline-none focus:ring-2 focus:ring-end-accent/50 focus:border-end-accent transition-all"
                                     required
                                 />
@@ -126,20 +131,14 @@ export function Login() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    autoComplete="off"
+                                    autoComplete="new-password"
                                     className="block w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-end-text-sec/30 focus:outline-none focus:ring-2 focus:ring-end-accent/50 focus:border-end-accent transition-all"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <div className="relative flex items-center">
-                                    <input type="checkbox" className="peer h-4 w-4 rounded border-white/20 bg-black/20 text-end-accent focus:ring-end-accent focus:ring-offset-0" />
-                                </div>
-                                <span className="text-end-text-sec group-hover:text-white transition-colors">Lembrar-me</span>
-                            </label>
+                        <div className="flex items-center justify-end text-sm">
                             <a href="#" className="text-end-accent hover:text-end-accent-hover font-medium transition-colors">Recuperar senha</a>
                         </div>
 
