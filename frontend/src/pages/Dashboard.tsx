@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RiskThermometer } from '../components/RiskThermometer';
-import { TrendingUp, AlertOctagon, FileText, ShieldCheck } from 'lucide-react';
+import { TrendingUp, AlertOctagon, FileText, ShieldCheck, X, Activity } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { cn } from '../lib/utils';
@@ -34,6 +34,7 @@ export function Dashboard() {
     const [loading, setLoading] = useState(true);
     const { hasFeature, tier } = useFeatures();
     const [error, setError] = useState<string | null>(null);
+    const [isAnomalyModalOpen, setIsAnomalyModalOpen] = useState(false);
 
     useEffect(() => {
         // Fetch metrics from our FastAPI backend
@@ -138,7 +139,10 @@ export function Dashboard() {
                 )}
 
                 {hasFeature('ai_anomaly_detection') && anomalies.length > 0 && (
-                    <div className="bg-end-error/10 border border-end-error/20 rounded-lg p-4 flex items-center justify-between gap-4 animate-bounce-subtle">
+                    <div
+                        onClick={() => setIsAnomalyModalOpen(true)}
+                        className="bg-end-error/10 border border-end-error/20 rounded-lg p-4 flex items-center justify-between gap-4 animate-bounce-subtle cursor-pointer hover:bg-end-error/20 transition-colors shadow-lg shadow-end-error/5"
+                    >
                         <div className="flex items-center gap-4">
                             <div className="h-12 w-12 bg-end-error rounded-full flex items-center justify-center text-white">
                                 <AlertOctagon size={24} />
@@ -268,6 +272,58 @@ export function Dashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Anomaly Modal */}
+            {isAnomalyModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-end-card border border-end-border rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+                        <div className="p-4 border-b border-end-border flex justify-between items-center bg-end-error/10">
+                            <h3 className="font-bold text-white flex items-center gap-2">
+                                <Activity size={18} className="text-end-error" />
+                                Relatório de Anomalias (IA)
+                            </h3>
+                            <button onClick={() => setIsAnomalyModalOpen(false)} className="text-end-text-sec hover:text-white transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                            <p className="text-sm text-end-text-sec mb-4">
+                                {anomalies.length} comportamento(s) atípico(s) detectado(s) pelo nosso motor de IA nos últimos 30 dias.
+                            </p>
+                            <div className="space-y-3">
+                                {anomalies.map((anom, idx) => (
+                                    <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-lg flex gap-4 items-start">
+                                        <div className="bg-end-error/20 p-2 rounded-full shrink-0">
+                                            <AlertOctagon size={18} className="text-end-error" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="text-white font-bold capitalize">{anom.tipo?.replace('_', ' ')}</h4>
+                                                <span className={cn(
+                                                    "text-[9px] font-black uppercase px-2 py-0.5 rounded",
+                                                    anom.severidade === 'alta' ? "bg-end-error/20 text-end-error" :
+                                                        anom.severidade === 'media' ? "bg-end-warning/20 text-end-warning" : "bg-white/10 text-white"
+                                                )}>
+                                                    Risco: {anom.severidade}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-end-text-sec">{anom.detalhe}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-end-border bg-white/[0.02] flex justify-end">
+                            <button
+                                onClick={() => setIsAnomalyModalOpen(false)}
+                                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-lg font-bold transition-colors text-sm"
+                            >
+                                Fechar Relatório
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
