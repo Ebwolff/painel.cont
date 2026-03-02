@@ -126,10 +126,8 @@ async def create_tenant(tenant: TenantCreate, client = Depends(verify_super_admi
 async def update_tenant(tenant_id: str, data: TenantUpdate, client = Depends(verify_super_admin)):
     admin_client = supabase_service.get_service_client()
     update_payload = data.dict(exclude_unset=True)
-    print(f"DEBUG: Updating tenant {tenant_id} with data: {update_payload}")
     
     res = admin_client.table("tenants").update(update_payload).eq("id", tenant_id).execute()
-    print(f"DEBUG: Update result counts: {len(res.data) if res.data else 0}")
     
     if not res.data:
          raise HTTPException(status_code=404, detail="Tenant não encontrado.")
