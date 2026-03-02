@@ -80,7 +80,22 @@ export function Upload() {
 
         try {
             const data = await api.upload('/upload/xml', formData);
-            setResult(data);
+
+            if (data.status === 'enqueued') {
+                setResult({
+                    _async: true,
+                    job_id: data.job_id,
+                    message: data.message || 'Nota enviada para processamento.'
+                });
+            } else if (data.status === 'already_processed') {
+                setResult({
+                    _async: true,
+                    already_exists: true,
+                    message: data.message || 'Esta nota já foi processada anteriormente.'
+                });
+            } else {
+                setResult(data);
+            }
         } catch (err: any) {
             setError(err.message || "Erro ao processar o arquivo. Verifique se o backend está rodando.");
             console.error(err);
@@ -217,7 +232,41 @@ export function Upload() {
             )}
 
             {/* Results */}
-            {result && (
+            {result && result._async && (
+                <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className={cn(
+                        "p-6 rounded-lg border flex items-center gap-4",
+                        result.already_exists
+                            ? "bg-end-accent/10 border-end-accent/30 text-end-accent"
+                            : "bg-end-success/10 border-end-success text-end-success"
+                    )}>
+                        {result.already_exists ? <AlertTriangle size={32} /> : <CheckCircle size={32} />}
+                        <div>
+                            <div className="text-lg font-bold uppercase">
+                                {result.already_exists ? "Nota Já Processada" : "Nota Enviada com Sucesso"}
+                            </div>
+                            <p className="text-sm opacity-80">
+                                {result.message}
+                            </p>
+                            {result.job_id && (
+                                <p className="text-xs opacity-60 mt-1 font-mono">
+                                    Job ID: {result.job_id}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <button
+                            onClick={() => { setFile(null); setResult(null); setError(null); }}
+                            className="bg-end-accent hover:bg-end-accent/90 text-black font-bold py-2.5 px-6 rounded-md transition-colors"
+                        >
+                            Enviar Outra Nota
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {result && !result._async && (
                 <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
                     <h2 className="text-xl font-bold text-white">Resultado da Análise</h2>
 
@@ -231,17 +280,17 @@ export function Upload() {
 
                     <div className={cn(
                         "p-6 rounded-lg border flex items-center gap-4",
-                        result.validation.status === 'conforme'
+                        result.validation?.status === 'conforme'
                             ? "bg-end-success/10 border-end-success text-end-success"
                             : "bg-end-error/10 border-end-error text-end-error"
                     )}>
-                        {result.validation.status === 'conforme' ? <CheckCircle size={32} /> : <XCircle size={32} />}
+                        {result.validation?.status === 'conforme' ? <CheckCircle size={32} /> : <XCircle size={32} />}
                         <div>
                             <div className="text-lg font-bold uppercase">
-                                {result.validation.status === 'conforme' ? "Conformidade Total" : "Divergência Encontrada"}
+                                {result.validation?.status === 'conforme' ? "Conformidade Total" : "Divergência Encontrada"}
                             </div>
                             <p className="text-sm opacity-80">
-                                {result.validation.status === 'conforme'
+                                {result.validation?.status === 'conforme'
                                     ? "Os tributos foram validados de acordo com as regras fiscais vigentes."
                                     : "Foram identificados erros de cálculo ou alíquotas incorretas nos tributos analisados."}
                             </p>
@@ -249,49 +298,53 @@ export function Upload() {
                     </div>
 
                     {/* Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-end-card border border-end-border p-5 rounded-lg">
-                            <h3 className="text-sm font-medium text-end-text-sec mb-4 uppercase tracking-wider">Dados da Nota</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between border-b border-end-border pb-2">
-                                    <span className="text-end-text-sec">Número</span>
-                                    <span className="text-white font-mono">{result.parsed_data.numero}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-end-border pb-2">
-                                    <span className="text-end-text-sec">Emitente</span>
-                                    <span className="text-white">{result.parsed_data.emitente_nome?.substring(0, 20)}...</span>
-                                </div>
-                                <div className="flex justify-between border-b border-end-border pb-2">
-                                    <span className="text-end-text-sec">Valor Total</span>
-                                    <span className="text-white font-mono font-bold">R$ {result.parsed_data.valor_total.toFixed(2)}</span>
+                    {result.parsed_data && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-end-card border border-end-border p-5 rounded-lg">
+                                <h3 className="text-sm font-medium text-end-text-sec mb-4 uppercase tracking-wider">Dados da Nota</h3>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between border-b border-end-border pb-2">
+                                        <span className="text-end-text-sec">Número</span>
+                                        <span className="text-white font-mono">{result.parsed_data.numero}</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-end-border pb-2">
+                                        <span className="text-end-text-sec">Emitente</span>
+                                        <span className="text-white">{result.parsed_data.emitente_nome?.substring(0, 20)}...</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-end-border pb-2">
+                                        <span className="text-end-text-sec">Valor Total</span>
+                                        <span className="text-white font-mono font-bold">R$ {result.parsed_data.valor_total?.toFixed(2)}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="bg-end-card border border-end-border p-5 rounded-lg">
-                            <h3 className="text-sm font-medium text-end-text-sec mb-4 uppercase tracking-wider">Validação Tributária</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center border-b border-end-border pb-2">
-                                    <span className="text-end-text-sec">CBS (0.9%)</span>
-                                    <div className="text-right">
-                                        <div className={cn("font-mono font-bold", result.validation.validation_details.cbs_ok ? "text-end-success" : "text-end-error")}>
-                                            {result.parsed_data.valor_cbs.toFixed(2)}
+                            {result.validation?.validation_details && (
+                                <div className="bg-end-card border border-end-border p-5 rounded-lg">
+                                    <h3 className="text-sm font-medium text-end-text-sec mb-4 uppercase tracking-wider">Validação Tributária</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center border-b border-end-border pb-2">
+                                            <span className="text-end-text-sec">CBS (0.9%)</span>
+                                            <div className="text-right">
+                                                <div className={cn("font-mono font-bold", result.validation.validation_details.cbs_ok ? "text-end-success" : "text-end-error")}>
+                                                    {result.parsed_data.valor_cbs?.toFixed(2)}
+                                                </div>
+                                                <div className="text-xs text-end-text-sec">Esperado: {result.validation.validation_details.cbs_esperado?.toFixed(2)}</div>
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-end-text-sec">Esperado: {result.validation.validation_details.cbs_esperado.toFixed(2)}</div>
+                                        <div className="flex justify-between items-center border-b border-end-border pb-2">
+                                            <span className="text-end-text-sec">IBS (0.1%)</span>
+                                            <div className="text-right">
+                                                <div className={cn("font-mono font-bold", result.validation.validation_details.ibs_ok ? "text-end-success" : "text-end-error")}>
+                                                    {result.parsed_data.valor_ibs?.toFixed(2)}
+                                                </div>
+                                                <div className="text-xs text-end-text-sec">Esperado: {result.validation.validation_details.ibs_esperado?.toFixed(2)}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center border-b border-end-border pb-2">
-                                    <span className="text-end-text-sec">IBS (0.1%)</span>
-                                    <div className="text-right">
-                                        <div className={cn("font-mono font-bold", result.validation.validation_details.ibs_ok ? "text-end-success" : "text-end-error")}>
-                                            {result.parsed_data.valor_ibs.toFixed(2)}
-                                        </div>
-                                        <div className="text-xs text-end-text-sec">Esperado: {result.validation.validation_details.ibs_esperado.toFixed(2)}</div>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
         </div>

@@ -113,7 +113,7 @@ export function Empresas() {
             fetchCompanies();
         } catch (error: any) {
             console.error("Failed to create company", error);
-            alert(error.response?.data?.detail || "Erro ao cadastrar empresa. Verifique os dados.");
+            alert(error.message || "Erro ao cadastrar empresa. Verifique os dados.");
         } finally {
             setIsSaving(false);
         }

@@ -34,12 +34,11 @@ def get_companies(user: dict = Depends(get_current_user)):
 
 
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class CompanyCreate(BaseModel):
     razao_social: str = Field(..., min_length=2, max_length=150)
     cnpj: str = Field(..., min_length=14)
-    email: str = Field(None)
-    telefone: str = Field(None)
     regime_tributario: str = Field("lucro_real")
 
 @router.post("/", summary="Cadastra nova empresa")
@@ -48,7 +47,7 @@ def create_company(company: CompanyCreate, user: dict = Depends(get_current_user
         client = supabase_service.get_client_for_user(user['access_token'])
         
         # Dados limpos e validados via Pydantic
-        company_data = company.dict()
+        company_data = company.dict(exclude_none=True)
         cnpj = company_data["cnpj"].replace(".", "").replace("/", "").replace("-", "")
         company_data["cnpj"] = cnpj
         
