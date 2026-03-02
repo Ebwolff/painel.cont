@@ -36,9 +36,8 @@ def get_companies(user: dict = Depends(get_current_user)):
 from pydantic import BaseModel, Field
 
 class CompanyCreate(BaseModel):
-    nome: str = Field(..., min_length=2, max_length=100)
-    cnpj: str = Field(..., pattern=r"^\d+$")
-    razao_social: str = Field(None, max_length=150)
+    razao_social: str = Field(..., min_length=2, max_length=150)
+    cnpj: str = Field(..., min_length=14)
     email: str = Field(None)
     telefone: str = Field(None)
     regime_tributario: str = Field("lucro_real")
@@ -93,7 +92,7 @@ def create_company(company: CompanyCreate, user: dict = Depends(get_current_user
             action="CREATE_COMPANY",
             resource="EMPRESA",
             resource_id=res.data[0]['id'] if res.data else None,
-            details={"nome": company.nome}
+            details={"razao_social": company.razao_social}
         )
         return res.data
     except HTTPException:
