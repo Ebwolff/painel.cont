@@ -206,7 +206,12 @@ export function TenantsList() {
                                             <div className="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center text-blue-500">
                                                 <Building2 size={16} />
                                             </div>
-                                            <span className="font-bold text-white">{tenant.nome}</span>
+                                            <div>
+                                                <span className="font-bold text-white block">{tenant.nome}</span>
+                                                {tenant.plano && tenant.plano !== 'free' && (
+                                                    <span className="text-[10px] text-end-accent font-bold uppercase">{tenant.plano}</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="p-4 text-end-text-sec font-mono text-sm">{tenant.cnpj}</td>
@@ -217,10 +222,12 @@ export function TenantsList() {
                                             <div className="w-24 bg-white/10 rounded-full h-1.5">
                                                 <div
                                                     className="bg-end-accent h-1.5 rounded-full transition-all"
-                                                    style={{ width: `${Math.min(100, (billing.cnpj_count || 0) / 50 * 100)}%` }}
+                                                    style={{ width: `${Math.min(100, (billing.cnpj_count || 0) / (tenant.limite_empresas || 5) * 100)}%` }}
                                                 />
                                             </div>
-                                            <span className="text-sm font-bold text-white">{billing.cnpj_count || 0}</span>
+                                            <span className="text-sm font-bold text-white">
+                                                {billing.cnpj_count || 0} / {tenant.limite_empresas || 5}
+                                            </span>
                                         </div>
                                     </td>
 

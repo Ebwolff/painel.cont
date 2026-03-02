@@ -10,10 +10,10 @@ def inspect_columns():
     supabase: Client = create_client(url, service_key)
 
     # Fetch one record to see columns
-    res = supabase.table("notas_fiscais").select("*").limit(1).execute()
+    res = supabase.table("tenants").select("*").limit(1).execute()
     
     if res.data:
-        print("Colunas na tabela 'notas_fiscais':")
+        print("Colunas na tabela 'tenants':")
         print(list(res.data[0].keys()))
     else:
         print("Tabela vazia ou erro ao buscar dados.")

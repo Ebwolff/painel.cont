@@ -16,13 +16,15 @@ class TenantCreate(BaseModel):
     cnpj: str
     plano: str = 'starter'
 
+from typing import Optional
+
 class TenantUpdate(BaseModel):
-    nome: str
-    cnpj: str
-    plano: str
-    limite_empresas: int = 5
-    suspensao_limite: bool = False
-    setup_pago: bool = False
+    nome: Optional[str] = None
+    cnpj: Optional[str] = None
+    plano: Optional[str] = None
+    limite_empresas: Optional[int] = None
+    suspensao_limite: Optional[bool] = None
+    setup_pago: Optional[bool] = None
 
 
 # --- PRICING ENGINE (Modelo Incremental por CNPJ) ---
@@ -123,8 +125,11 @@ async def create_tenant(tenant: TenantCreate, client = Depends(verify_super_admi
 @router.put("/tenants/{tenant_id}", summary="Atualizar tenant (Super Admin)")
 async def update_tenant(tenant_id: str, data: TenantUpdate, client = Depends(verify_super_admin)):
     admin_client = supabase_service.get_service_client()
+    update_payload = data.dict(exclude_unset=True)
+    print(f"DEBUG: Updating tenant {tenant_id} with data: {update_payload}")
     
-    res = admin_client.table("tenants").update(data.dict()).eq("id", tenant_id).execute()
+    res = admin_client.table("tenants").update(update_payload).eq("id", tenant_id).execute()
+    print(f"DEBUG: Update result counts: {len(res.data) if res.data else 0}")
     
     if not res.data:
          raise HTTPException(status_code=404, detail="Tenant não encontrado.")
