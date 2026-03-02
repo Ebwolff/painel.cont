@@ -19,6 +19,8 @@ export function TenantsList() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTenant, setNewTenant] = useState({ nome: '', cnpj: '', plano: 'free' });
     const [totalMRR, setTotalMRR] = useState(0);
+    const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+    const [planData, setPlanData] = useState<any>(null);
 
     const formatCNPJ = (value: string) => {
         const digits = value.replace(/\D/g, '').slice(0, 14);
@@ -78,6 +80,20 @@ export function TenantsList() {
 
     const handleOpenEdit = (tenant: any) => { setEditingTenant({ ...tenant }); setIsEditModalOpen(true); setActiveMenu(null); };
 
+    const handleOpenPlan = (tenant: any) => {
+        setPlanData({
+            id: tenant.id,
+            nome: tenant.nome,
+            cnpj: tenant.cnpj,
+            plano: tenant.plano || 'free',
+            limite_empresas: tenant.limite_empresas || 5,
+            suspensao_limite: tenant.suspensao_limite || false,
+            setup_pago: tenant.setup_pago || false
+        });
+        setIsPlanModalOpen(true);
+        setActiveMenu(null);
+    };
+
     const handleUpdateTenant = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -85,6 +101,15 @@ export function TenantsList() {
             setIsEditModalOpen(false);
             fetchTenants();
         } catch { alert("Erro ao atualizar escritório."); }
+    };
+
+    const handleUpdatePlan = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await api.put(`/admin/tenants/${planData.id}`, planData);
+            setIsPlanModalOpen(false);
+            fetchTenants();
+        } catch { alert("Erro ao atualizar plano do escritório."); }
     };
 
     const handleDeleteTenant = async (tenant: any) => {
@@ -245,6 +270,9 @@ export function TenantsList() {
                                                 <button onClick={() => window.location.href = `/admin/users?tenant_id=${tenant.id}`} className="w-full px-4 py-2 text-sm text-white hover:bg-white/10 flex items-center gap-2">
                                                     <User size={14} className="text-green-400" /> Gerenciar Usuários
                                                 </button>
+                                                <button onClick={() => handleOpenPlan(tenant)} className="w-full px-4 py-2 text-sm text-white hover:bg-white/10 flex items-center gap-2">
+                                                    <TrendingUp size={14} className="text-amber-400" /> Gerenciar Plano
+                                                </button>
                                                 <div className="h-px bg-white/10 my-1" />
                                                 <button onClick={() => handleDeleteTenant(tenant)} className="w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
                                                     <Trash2 size={14} /> Excluir Escritório
@@ -299,6 +327,79 @@ export function TenantsList() {
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 px-4 py-2 border border-white/10 rounded-lg text-end-text-sec hover:bg-white/5">Cancelar</button>
                                 <button type="submit" className="flex-1 px-4 py-2 bg-end-accent text-black font-bold rounded-lg hover:bg-end-accent/90">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* Modal Manage Plan */}
+            {isPlanModalOpen && planData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-6 shadow-2xl">
+                        <div className="flex items-center gap-2 mb-1">
+                            <TrendingUp size={18} className="text-amber-400" />
+                            <h2 className="text-xl font-bold text-white">Gerenciar Plano</h2>
+                        </div>
+                        <p className="text-xs text-end-text-sec mb-6">{planData.nome}</p>
+
+                        <form onSubmit={handleUpdatePlan} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Plano Ativo</label>
+                                <select
+                                    value={planData.plano}
+                                    onChange={e => setPlanData({ ...planData, plano: e.target.value })}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none focus:border-end-accent appearance-none cursor-pointer"
+                                >
+                                    <option value="free" className="bg-end-card">Plano Gratuito</option>
+                                    <option value="starter" className="bg-end-card">Starter (Pequeno porte)</option>
+                                    <option value="pro" className="bg-end-card">Professional (Médio porte)</option>
+                                    <option value="enterprise" className="bg-end-card">Enterprise (Ilimitado)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Limite de CNPJs (Manual)</label>
+                                <input
+                                    type="number"
+                                    value={planData.limite_empresas}
+                                    onChange={e => setPlanData({ ...planData, limite_empresas: parseInt(e.target.value) })}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none focus:border-end-accent"
+                                    required
+                                />
+                                <p className="text-[10px] text-end-text-sec mt-1">Define o teto de empresas que este escritório pode cadastrar.</p>
+                            </div>
+
+                            <div className="p-4 bg-white/5 rounded-lg space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-bold text-white uppercase">Bloqueio de Limite</p>
+                                        <p className="text-[10px] text-end-text-sec text-pretty">Impedir novos cadastros se exceder limite.</p>
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        checked={planData.suspensao_limite}
+                                        onChange={e => setPlanData({ ...planData, suspensao_limite: e.target.checked })}
+                                        className="w-5 h-5 accent-end-accent cursor-pointer"
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-bold text-white uppercase">Taxa de Setup</p>
+                                        <p className="text-[10px] text-end-text-sec">Marcação se a implementação foi paga.</p>
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        checked={planData.setup_pago}
+                                        onChange={e => setPlanData({ ...planData, setup_pago: e.target.checked })}
+                                        className="w-5 h-5 accent-end-accent cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button type="button" onClick={() => setIsPlanModalOpen(false)} className="flex-1 px-4 py-2 border border-white/10 rounded-lg text-end-text-sec hover:bg-white/5 transition-colors">Cancelar</button>
+                                <button type="submit" className="flex-1 px-4 py-2 bg-end-accent text-black font-bold rounded-lg hover:bg-end-accent/90 transition-transform active:scale-95">Salvar Alterações</button>
                             </div>
                         </form>
                     </div>

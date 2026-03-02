@@ -20,6 +20,9 @@ class TenantUpdate(BaseModel):
     nome: str
     cnpj: str
     plano: str
+    limite_empresas: int = 5
+    suspensao_limite: bool = False
+    setup_pago: bool = False
 
 
 # --- PRICING ENGINE (Modelo Incremental por CNPJ) ---
@@ -126,6 +129,15 @@ async def update_tenant(tenant_id: str, data: TenantUpdate, client = Depends(ver
     if not res.data:
          raise HTTPException(status_code=404, detail="Tenant não encontrado.")
          
+    # Auditoria da alteração de plano/configuração
+    supabase_service.log_audit(
+        user_id=None, # Super Admin context
+        tenant_id=tenant_id,
+        action="UPDATE_TENANT_PLAN",
+        resource="TENANT",
+        resource_id=tenant_id,
+        details=data.dict()
+    )
     return res.data[0]
 
 @router.delete("/tenants/{tenant_id}", summary="Excluir tenant (Super Admin)")
