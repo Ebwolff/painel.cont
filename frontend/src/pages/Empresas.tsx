@@ -396,20 +396,16 @@ export function Empresas() {
                                                 >
                                                     <RefreshCw size={14} className="text-end-accent" /> Sincronizar SEFAZ
                                                 </button>
-                                                {hasPermission('can_delete_data') && (
-                                                    <>
-                                                        <div className="border-t border-end-border my-1" />
-                                                        <button
-                                                            onClick={() => {
-                                                                setOpenMenuId(null);
-                                                                handleDelete(empresa.id);
-                                                            }}
-                                                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-end-error hover:bg-end-error/10 transition-colors"
-                                                        >
-                                                            <Trash2 size={14} /> Excluir Empresa
-                                                        </button>
-                                                    </>
-                                                )}
+                                                <div className="border-t border-end-border my-1" />
+                                                <button
+                                                    onClick={() => {
+                                                        setOpenMenuId(null);
+                                                        handleDelete(empresa.id);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-end-error hover:bg-end-error/10 transition-colors"
+                                                >
+                                                    <Trash2 size={14} /> Excluir Empresa
+                                                </button>
                                             </div>
                                         </>
                                     )}
