@@ -101,6 +101,65 @@ def create_company(company: CompanyCreate, user: dict = Depends(get_current_user
         raise HTTPException(status_code=500, detail="Erro interno ao salvar empresa.")
 
 
+class CompanyUpdate(BaseModel):
+    razao_social: Optional[str] = Field(None, min_length=2, max_length=150)
+    cnpj: Optional[str] = Field(None, min_length=14)
+    regime_tributario: Optional[str] = None
+
+@router.put("/{company_id}", summary="Atualiza uma empresa")
+def update_company(company_id: str, company: CompanyUpdate, user: dict = Depends(get_current_user)):
+    try:
+        # 1. Identificar tenant do usuário (Admin Client)
+        admin_client = supabase_service.get_service_client()
+        profile_res = admin_client.table("profiles").select("tenant_id").eq("id", user['id']).single().execute()
+        tenant_id = profile_res.data.get("tenant_id") if profile_res.data else None
+        
+        if not tenant_id:
+            raise HTTPException(status_code=403, detail="Acesso negado.")
+
+        user_client = supabase_service.get_client_for_user(user['access_token'])
+        
+        # Preparar payload apenas com campos fornecidos
+        update_data = company.dict(exclude_unset=True, exclude_none=True)
+        if not update_data:
+            raise HTTPException(status_code=400, detail="Nenhum dado fornecido para atualização.")
+            
+        if "cnpj" in update_data:
+            cnpj = update_data["cnpj"].replace(".", "").replace("/", "").replace("-", "")
+            update_data["cnpj"] = cnpj
+            
+            # Verificar se o novo CNPJ já existe em OUTRA empresa
+            existing = user_client.table("empresas").select("id").eq("cnpj", cnpj).execute()
+            if existing.data and existing.data[0]['id'] != company_id:
+                raise HTTPException(status_code=400, detail="Este CNPJ já está cadastrado em outra empresa no sistema.")
+
+        # Executar update com filtro explícito de tenant
+        res = user_client.table("empresas")\
+            .update(update_data)\
+            .eq("id", company_id)\
+            .eq("tenant_id", tenant_id)\
+            .execute()
+        
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Empresa não encontrada ou acesso negado.")
+
+        # Auditoria
+        supabase_service.log_audit(
+            user_id=user['id'],
+            tenant_id=tenant_id,
+            action="UPDATE_COMPANY",
+            resource="EMPRESA",
+            resource_id=company_id,
+            details=update_data
+        )
+
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"COMPANIES: Erro ao atualizar empresa: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao atualizar empresa.")
+
 @router.delete("/{company_id}", summary="Exclui uma empresa")
 def delete_company(company_id: str, user: dict = Depends(get_current_user)):
     try:

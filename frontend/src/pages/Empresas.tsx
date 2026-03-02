@@ -96,7 +96,20 @@ export function Empresas() {
         setCertUploadError(null);
     };
 
-    const handleCreateCompany = async (e: React.FormEvent) => {
+    const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
+
+    const openEditModal = (empresa: any) => {
+        setEditingCompanyId(empresa.id);
+        setNewCompany({
+            razao_social: empresa.razao_social,
+            cnpj: formatCNPJ(empresa.cnpj),
+            regime_tributario: empresa.regime_tributario || 'lucro_real'
+        });
+        setIsModalOpen(true);
+        setOpenMenuId(null);
+    };
+
+    const handleCreateOrEditCompany = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validateCNPJ(newCompany.cnpj)) {
@@ -106,14 +119,20 @@ export function Empresas() {
 
         setIsSaving(true);
         try {
-            await api.post('/companies/', newCompany);
-            alert("Empresa cadastrada com sucesso!");
+            if (editingCompanyId) {
+                await api.put(`/companies/${editingCompanyId}`, newCompany);
+                alert("Empresa atualizada com sucesso!");
+            } else {
+                await api.post('/companies/', newCompany);
+                alert("Empresa cadastrada com sucesso!");
+            }
             setIsModalOpen(false);
+            setEditingCompanyId(null);
             setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real' });
             fetchCompanies();
         } catch (error: any) {
-            console.error("Failed to create company", error);
-            alert(error.message || "Erro ao cadastrar empresa. Verifique os dados.");
+            console.error("Failed to save company", error);
+            alert(error.message || "Erro ao salvar empresa. Verifique os dados.");
         } finally {
             setIsSaving(false);
         }
@@ -162,8 +181,10 @@ export function Empresas() {
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-end-card border border-end-border w-full max-w-md rounded-xl p-8 shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-6">Cadastrar Nova Empresa</h3>
-                        <form onSubmit={handleCreateCompany} className="space-y-4">
+                        <h3 className="text-xl font-bold text-white mb-6">
+                            {editingCompanyId ? 'Editar Empresa' : 'Cadastrar Nova Empresa'}
+                        </h3>
+                        <form onSubmit={handleCreateOrEditCompany} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Razão Social</label>
                                 <input
@@ -201,7 +222,11 @@ export function Empresas() {
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={() => {
+                                        setIsModalOpen(false);
+                                        setEditingCompanyId(null);
+                                        setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real' });
+                                    }}
                                     className="flex-1 px-4 py-2 border border-end-border rounded text-end-text-sec hover:bg-white/5 transition-colors"
                                 >
                                     Cancelar
@@ -219,7 +244,7 @@ export function Empresas() {
                                             <RefreshCw size={16} className="animate-spin" />
                                             Salvando...
                                         </>
-                                    ) : "Salvar Empresa"}
+                                    ) : (editingCompanyId ? "Salvar Alterações" : "Salvar Empresa")}
                                 </button>
                             </div>
                         </form>
@@ -346,6 +371,12 @@ export function Empresas() {
                                         <>
                                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                                             <div className="absolute right-0 top-8 z-50 bg-end-card border border-end-border rounded-lg shadow-xl shadow-black/40 py-1 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
+                                                <button
+                                                    onClick={() => openEditModal(empresa)}
+                                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors"
+                                                >
+                                                    <Building2 size={14} className="text-end-accent" /> Editar Empresa
+                                                </button>
                                                 <button
                                                     onClick={() => {
                                                         setOpenMenuId(null);
