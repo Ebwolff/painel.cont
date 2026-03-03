@@ -70,13 +70,14 @@ async def upload_certificate(
             admin_client.table("profiles")
             .select("tenant_id")
             .eq("id", user["id"])
-            .single()
+            .maybe_single()
             .execute()
         )
         tenant_id = profile_res.data.get("tenant_id") if profile_res.data else None
 
         if not tenant_id:
-            raise HTTPException(status_code=403, detail="Usuário sem escritório vinculado.")
+            logger.warning(f"CERTIFICATES: Perfil ou tenant_id não encontrado para usuário {user['id']}")
+            raise HTTPException(status_code=403, detail="Usuário sem perfil ou escritório vinculado.")
 
         # 4. Upsert — uma empresa tem apenas um certificado ativo
         admin_client.table("certificados_a1").upsert(
@@ -120,8 +121,15 @@ async def upload_certificate(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"CERTIFICATES: Erro inesperado: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno ao processar certificado.")
+        import traceback
+        error_msg = traceback.format_exc()
+        logger.error(f"CERTIFICATES: Erro inesperado: {e}\n{error_msg}")
+        
+        # Se for um erro do PostgREST/Supabase, retorna o detalhe útil
+        if "postgrest" in str(type(e)).lower() or "PGRST" in str(e):
+             raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {str(e)}")
+             
+        raise HTTPException(status_code=500, detail=f"Erro interno ao processar certificado: {str(e)}")
 
 
 @router.get("/status/{company_id}", summary="Verifica status do certificado da empresa")
