@@ -39,11 +39,11 @@ class SefazSyncService:
             .execute()
         )
 
-        if not cert_res.data:
+        if not cert_res or not cert_res.data:
             logger.warning(f"SEFAZ SYNC: Nenhum certificado ativo para empresa {empresa_id}")
             return {"status": "error", "message": "Certificado A1 não configurado. Faça upload do certificado."}
 
-        cert_row = cert_res.data
+        cert_row = cert_res.data if hasattr(cert_res, 'data') else cert_res
         ambiente = cert_row.get("ambiente", "producao")
         ultimo_nsu = cert_row.get("ultimo_nsu", "000000000000000")
 
