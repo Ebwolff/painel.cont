@@ -1,6 +1,12 @@
 import { supabase } from '../lib/supabase';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+let API_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Fix Mixed Content: If we are on HTTPS but API_URL is HTTP, force HTTPS
+if (typeof window !== 'undefined' && window.location.protocol === 'https:' && API_URL.startsWith('http:')) {
+    console.warn("API_URL is HTTP but page is HTTPS. Forcing HTTPS for API calls.");
+    API_URL = API_URL.replace('http:', 'https:');
+}
 
 async function getHeaders() {
     const { data } = await supabase.auth.getSession();
