@@ -6,7 +6,7 @@ armazenando-o criptografado no banco para uso no sync SEFAZ.
 import base64
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -28,7 +28,7 @@ def _read_cert_expiry(pfx_bytes: bytes, password: str) -> datetime:
         return certificate.not_valid_after_utc
     except Exception:
         # Fallback: 1 ano a partir de hoje
-        return datetime.utcnow() + timedelta(days=365)
+        return datetime.now(timezone.utc) + timedelta(days=365)
 
 
 @router.post("/upload/{company_id}", summary="Upload e armazenamento seguro do certificado A1")
@@ -114,7 +114,7 @@ async def upload_certificate(
             "message": "Certificado A1 configurado com sucesso!",
             "expires_at": expires_at.isoformat(),
             "ambiente": ambiente,
-            "dias_restantes": max(0, (expires_at - datetime.utcnow()).days),
+            "dias_restantes": max(0, (expires_at - datetime.now(timezone.utc)).days),
         }
 
     except HTTPException:
@@ -145,7 +145,7 @@ async def get_certificate_status(
 
         cert = res.data
         venc = datetime.fromisoformat(cert["vencimento"]) if cert.get("vencimento") else None
-        dias = max(0, (venc - datetime.utcnow()).days) if venc else 0
+        dias = max(0, (venc - datetime.now(timezone.utc)).days) if venc else 0
 
         return {
             "configured": True,

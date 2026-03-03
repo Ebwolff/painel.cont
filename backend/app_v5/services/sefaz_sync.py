@@ -5,7 +5,7 @@ Usa certificado A1 armazenado no banco para autenticar e buscar documentos.
 import os
 import base64
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.services.xml_parser import XMLParserService
@@ -85,7 +85,7 @@ class SefazSyncService:
         if not documentos:
             logger.info(f"SEFAZ SYNC: Nenhum documento novo para {razao} (NSU={ultimo_nsu})")
             admin_client.table("certificados_a1").update(
-                {"ultimo_sync": datetime.utcnow().isoformat()}
+                {"ultimo_sync": datetime.now(timezone.utc).isoformat()}
             ).eq("empresa_id", empresa_id).execute()
             return {"status": "success", "notas_processadas": 0, "message": "Nenhuma nota nova."}
 
@@ -148,7 +148,7 @@ class SefazSyncService:
         # 6. Atualizar último NSU e timestamp de sync
         admin_client.table("certificados_a1").update({
             "ultimo_nsu": novo_nsu,
-            "ultimo_sync": datetime.utcnow().isoformat(),
+            "ultimo_sync": datetime.now(timezone.utc).isoformat(),
             "status": "ativo",
         }).eq("empresa_id", empresa_id).execute()
 
