@@ -60,8 +60,9 @@ async def upload_certificate(
             raise HTTPException(status_code=422, detail=f"Senha incorreta ou certificado inválido: {e}")
 
         # 2. Criptografar cert + senha em repouso
-        cert_b64 = base64.b64encode(content).decode("utf-8")
-        cert_encrypted = supabase_service.encrypt_data(cert_b64)
+        # A SEFAZ_SYNC espera q ao descriptografar, tenha uma string base64 válida
+        cert_b64_str = base64.b64encode(content).decode("utf-8")
+        cert_encrypted = supabase_service.encrypt_data(cert_b64_str)
         senha_encrypted = supabase_service.encrypt_data(password)
 
         # 3. Buscar tenant_id do usuário logado
