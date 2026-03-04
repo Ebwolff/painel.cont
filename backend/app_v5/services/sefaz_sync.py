@@ -195,7 +195,7 @@ class SefazSyncService:
                 return {"status": "success", "notas_processadas": 0, "message": "Nenhuma nota nova."}
 
             # ══════════════════════════════════════
-            # 5. Processar cada documento retornado
+            # ETAPA 1: Processar documentos recebidos
             # ══════════════════════════════════════
             notas_ok = 0
             notas_erro = 0
@@ -221,7 +221,16 @@ class SefazSyncService:
                         tenant_id=tenant_id, empresa_id=empresa_id,
                     )
 
-                    if not is_resumo:
+                    # Marcar resumos no banco para controle de manifestação
+                    if is_resumo:
+                        try:
+                            admin_client.table("notas_fiscais").update({
+                                "is_resumo": True,
+                                "manifestado": False,
+                            }).eq("id", nota_id).execute()
+                        except Exception:
+                            pass
+                    else:
                         items_results = validation_result.get("items_results", [])
                         for i, item in enumerate(nfe_data.get("itens", [])):
                             item_result = items_results[i] if i < len(items_results) else {}
@@ -258,18 +267,173 @@ class SefazSyncService:
                     notas_erro += 1
                     logger.error(f"SEFAZ SYNC: Erro ao processar documento NSU {doc.get('nsu')}: {e}")
 
+            # ══════════════════════════════════════════
+            # ETAPA 2: Manifestar notas pendentes
+            # ══════════════════════════════════════════
+            import asyncio
+            MAX_MANIFESTACOES = 20
+            DELAY_ENTRE_MANIFESTACOES = 0.5
+
+            manifestadas = 0
+            hit_656 = False
+
+            try:
+                pendentes = admin_client.table("notas_fiscais") \
+                    .select("id, chave_acesso, n_seq_evento") \
+                    .eq("empresa_id", empresa_id) \
+                    .eq("is_resumo", True) \
+                    .eq("manifestado", False) \
+                    .limit(MAX_MANIFESTACOES) \
+                    .execute()
+
+                for nota in (pendentes.data or []):
+                    chave = nota.get("chave_acesso")
+                    if not chave or len(chave) != 44:
+                        continue
+
+                    try:
+                        result = sefaz.manifest_document(
+                            pfx_bytes=pfx_bytes,
+                            password=senha,
+                            cnpj=cnpj,
+                            chave_nfe=chave,
+                            uf_empresa=uf_sigla,
+                            n_seq_evento=nota.get("n_seq_evento", 1),
+                        )
+
+                        if result["sucesso"]:
+                            # cStat 135 ou 136
+                            admin_client.table("notas_fiscais").update({
+                                "manifestado": True,
+                                "tipo_manifestacao": "210210",
+                                "protocolo_evento": result["protocolo"],
+                                "data_manifestacao": datetime.now(timezone.utc).isoformat(),
+                            }).eq("id", nota["id"]).execute()
+                            manifestadas += 1
+                            logger.info(f"SEFAZ MANIFEST: ✅ {chave[:20]}... manifestada (prot={result['protocolo']})")
+
+                        elif result["cStat"] == "573":
+                            # Duplicidade — já manifestado
+                            admin_client.table("notas_fiscais").update({
+                                "manifestado": True,
+                                "tipo_manifestacao": "210210",
+                                "protocolo_evento": result["protocolo"],
+                            }).eq("id", nota["id"]).execute()
+                            manifestadas += 1
+                            logger.info(f"SEFAZ MANIFEST: Duplicidade (573) para {chave[:20]}...")
+
+                        elif result["cStat"] == "656":
+                            logger.warning("SEFAZ MANIFEST: 656 Consumo Indevido — parando manifestação")
+                            hit_656 = True
+                            break
+
+                        elif result["cStat"] == "580":
+                            logger.warning(f"SEFAZ MANIFEST: Evento fora de prazo para {chave[:20]}...")
+
+                        elif result["cStat"] == "217":
+                            logger.warning(f"SEFAZ MANIFEST: NF-e não consta na base para {chave[:20]}...")
+
+                        else:
+                            logger.warning(f"SEFAZ MANIFEST: cStat={result['cStat']} para {chave[:20]}...")
+
+                    except Exception as e:
+                        logger.error(f"SEFAZ MANIFEST: Erro ao manifestar {chave[:20]}...: {e}")
+
+                    # Rate limiting entre manifestações
+                    await asyncio.sleep(DELAY_ENTRE_MANIFESTACOES)
+
+            except Exception as e:
+                logger.error(f"SEFAZ MANIFEST: Erro geral na etapa de manifestação: {e}")
+
+            # ══════════════════════════════════════════
+            # ETAPA 3: Redistribuição pós-manifestação
+            # ══════════════════════════════════════════
+            notas_completas = 0
+
+            if manifestadas > 0 and not hit_656:
+                logger.info(f"SEFAZ SYNC: {manifestadas} notas manifestadas. Buscando XMLs completos...")
+
+                try:
+                    docs_completos = sefaz.call_sefaz(pfx_bytes, senha, cnpj, novo_nsu, codigo_uf)
+
+                    for doc in docs_completos:
+                        try:
+                            nfe_data = self.parser.parse_nfe(doc["xml_content"])
+                            is_resumo = nfe_data.get("is_resumo", False)
+
+                            if not is_resumo:
+                                validation_result = self.rule_engine.validate_nfe(nfe_data)
+                                chave = nfe_data.get("chave_acesso")
+
+                                # Tentar atualizar nota existente (resumo → completa)
+                                existing = admin_client.table("notas_fiscais") \
+                                    .select("id") \
+                                    .eq("chave_acesso", chave) \
+                                    .eq("empresa_id", empresa_id) \
+                                    .maybe_single().execute()
+
+                                if existing and existing.data:
+                                    nota_id = existing.data["id"]
+                                    admin_client.table("notas_fiscais").update({
+                                        "is_resumo": False,
+                                        "emitente_cnpj": nfe_data.get("emitente_cnpj"),
+                                        "emitente_nome": nfe_data.get("emitente_nome"),
+                                        "valor_total": nfe_data.get("valor_total"),
+                                        "numero": nfe_data.get("numero"),
+                                        "serie": nfe_data.get("serie"),
+                                        "data_emissao": nfe_data.get("data_emissao"),
+                                        "status": validation_result.get("status", "processado"),
+                                    }).eq("id", nota_id).execute()
+
+                                    # Inserir itens
+                                    for item in nfe_data.get("itens", []):
+                                        admin_client.table("nfe_items").insert({
+                                            "tenant_id": tenant_id,
+                                            "nota_fiscal_id": nota_id,
+                                            "n_item": item.get("n_item"),
+                                            "ncm": item.get("ncm"),
+                                            "cfop": item.get("cfop"),
+                                            "cst": item.get("cst"),
+                                            "v_prod": item.get("v_prod"),
+                                            "v_cbs": item.get("v_cbs"),
+                                            "v_ibs": item.get("v_ibs"),
+                                        }).execute()
+
+                                    notas_completas += 1
+                                    logger.info(f"SEFAZ REDISTRIB: ✅ procNFe {chave[:20]}... completo")
+                                else:
+                                    # Nota nova (não era resumo anterior)
+                                    self.supabase.insert_nfe_result(
+                                        nfe_data, validation_result,
+                                        tenant_id=tenant_id, empresa_id=empresa_id,
+                                    )
+                                    notas_completas += 1
+
+                            if doc["nsu"] > novo_nsu:
+                                novo_nsu = doc["nsu"]
+
+                        except Exception as e:
+                            logger.error(f"SEFAZ REDISTRIB: Erro ao processar doc completo: {e}")
+
+                except RuntimeError as e:
+                    logger.warning(f"SEFAZ REDISTRIB: Erro na chamada de redistribuição: {e}")
+                except Exception as e:
+                    logger.error(f"SEFAZ REDISTRIB: Erro geral: {e}")
+
             # ══════════════════════════════════════
-            # 6. Atualizar último NSU e timestamp
+            # ETAPA 4: Atualizar último NSU e timestamp
             # ══════════════════════════════════════
             admin_client.table("certificados_a1").update({
                 "ultimo_nsu": novo_nsu,
                 "ultimo_sync": datetime.now(timezone.utc).isoformat(),
             }).eq("empresa_id", empresa_id).execute()
 
-            logger.info(f"SEFAZ SYNC OK — {notas_ok} notas processadas, {notas_erro} erros")
+            logger.info(f"SEFAZ SYNC OK — {notas_ok} notas, {manifestadas} manifestadas, {notas_completas} completas, {notas_erro} erros")
             return {
                 "status": "success",
                 "notas_processadas": notas_ok,
+                "notas_manifestadas": manifestadas,
+                "notas_completas": notas_completas,
                 "notas_com_erro": notas_erro,
                 "novo_nsu": novo_nsu,
                 "empresa": razao,

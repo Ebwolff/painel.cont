@@ -2,9 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install only runtime libs needed by lxml/cryptography
+# Install runtime + build libs needed by lxml/cryptography/xmlsec
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxml2 libxslt1.1 \
+    libxml2 libxml2-dev libxslt1.1 libxmlsec1-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install requirements (uses pre-built wheels)
