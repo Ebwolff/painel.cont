@@ -1,12 +1,13 @@
 """
 SefazClient — Integração real com webservice nfeDistDFeInteresse da SEFAZ.
 Autentica via certificado A1 (PFX) e retorna XMLs de NF-e para processamento.
+Segurança: mTLS em memória (requests_pkcs12), TLS 1.2 mínimo.
 """
-import os
-import tempfile
+import ssl
 import logging
 import requests
 from typing import Optional
+from requests_pkcs12 import post as pkcs12_post
 from cryptography.hazmat.primitives.serialization import (
     Encoding, PrivateFormat, NoEncryption
 )
@@ -14,6 +15,11 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_cer
 from lxml import etree
 
 logger = logging.getLogger(__name__)
+
+# Forçar TLS 1.2 mínimo (exigido pela SEFAZ)
+_tls_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+_tls_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+_tls_ctx.load_default_certs()
 
 # Endpoints por ambiente
 SEFAZ_ENDPOINTS = {
@@ -91,33 +97,24 @@ class SefazClient:
         Chama o webservice SEFAZ com autenticação mTLS e retorna lista de documentos.
         Cada documento: {"chave_acesso": str, "xml_content": bytes, "nsu": str, "tipo": str}
         """
-        cert_pem, key_pem = self.extract_pem_from_pfx(pfx_bytes, password)
         soap_body = self.build_soap_envelope(cnpj, ultimo_nsu, codigo_uf)
 
-        # SOAP 1.2: Content-Type DEVE ser application/soap+xml
-        # SOAPAction vai como parâmetro 'action' no Content-Type (não como header separado)
         headers = {
             "Content-Type": f'application/soap+xml; charset=utf-8; action="{SOAP_ACTION}"',
         }
 
-        # requests exige arquivos físicos para client cert — usamos tmpfiles em memória
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pem", mode="w") as cert_file:
-            cert_file.write(cert_pem)
-            cert_path = cert_file.name
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".key", mode="w") as key_file:
-            key_file.write(key_pem)
-            key_path = key_file.name
-
         try:
             logger.info(f"SEFAZ: Conectando em {self.endpoint} para CNPJ {cnpj[:8]}***")
-            response = requests.post(
+            # mTLS em memória — zero arquivos temporários
+            response = pkcs12_post(
                 self.endpoint,
                 data=soap_body.encode("utf-8"),
                 headers=headers,
-                cert=(cert_path, key_path),
-                verify=True,           # valida certificado SEFAZ
+                pkcs12_data=pfx_bytes,
+                pkcs12_password=password,
+                verify=True,
                 timeout=self.timeout,
+                tls_context=_tls_ctx,
             )
             response.raise_for_status()
             logger.info(f"SEFAZ: Resposta recebida — HTTP {response.status_code}")
@@ -131,19 +128,11 @@ class SefazClient:
             raise RuntimeError("SEFAZ não respondeu dentro do tempo limite.")
         except requests.exceptions.HTTPError as e:
             err_msg = e.response.content.decode("utf-8", errors="replace") if e.response is not None else str(e)
-            print(f">>>> RAW HTML/XML SEFAZ <<<<\n{err_msg}\n>>>>>>>>>>>>>>>")
             logger.error(f"SEFAZ: Erro HTTP {e.response.status_code if e.response else 'Unknown'}: {err_msg}")
             raise RuntimeError(f"Erro SEFAZ HTTP {e.response.status_code if e.response else 'Unknown'}: {err_msg[:500]}")
         except requests.exceptions.RequestException as e:
             logger.error(f"SEFAZ: Erro de conexão: {e}")
             raise RuntimeError(f"Erro de conexão com a SEFAZ: {e}")
-        finally:
-            # Limpa arquivos temporários de certificado
-            try:
-                os.unlink(cert_path)
-                os.unlink(key_path)
-            except Exception:
-                pass
 
     def _parse_response(self, xml_bytes: bytes) -> list[dict]:
         """
@@ -328,27 +317,19 @@ class SefazClient:
             "Content-Type": f'application/soap+xml; charset=utf-8; action="{self.SOAP_ACTION_EVENTO}"',
         }
 
-        # 5. Enviar com mTLS
+        # 5. Enviar com mTLS em memória
         logger.info(f"SEFAZ EVENTO: Enviando {tp_evento} para chave {chave_nfe[:20]}... (endpoint={endpoint})")
 
-        # Extrair cert/key PEM para mTLS
-        cert_pem, key_pem = self.extract_pem_from_pfx(pfx_bytes, password)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pem", mode="w") as cf:
-            cf.write(cert_pem)
-            cert_path = cf.name
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".key", mode="w") as kf:
-            kf.write(key_pem)
-            key_path = kf.name
-
         try:
-            response = requests.post(
+            response = pkcs12_post(
                 endpoint,
                 data=soap.encode("utf-8"),
                 headers=headers,
-                cert=(cert_path, key_path),
+                pkcs12_data=pfx_bytes,
+                pkcs12_password=password,
                 verify=True,
                 timeout=self.timeout,
+                tls_context=_tls_ctx,
             )
             response.raise_for_status()
             return self._parse_evento_response(response.content)
@@ -362,12 +343,6 @@ class SefazClient:
         except requests.exceptions.RequestException as e:
             logger.error(f"SEFAZ EVENTO: Erro de conexão: {e}")
             return {"sucesso": False, "cStat": "CONN", "xMotivo": str(e), "protocolo": None}
-        finally:
-            try:
-                os.unlink(cert_path)
-                os.unlink(key_path)
-            except Exception:
-                pass
 
     def _parse_evento_response(self, xml_bytes: bytes) -> dict:
         """Parseia resposta do RecepcaoEvento4."""
