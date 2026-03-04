@@ -40,6 +40,7 @@ class CompanyCreate(BaseModel):
     razao_social: str = Field(..., min_length=2, max_length=150)
     cnpj: str = Field(..., min_length=14)
     regime_tributario: str = Field("lucro_real")
+    uf: str = Field("SP", min_length=2, max_length=2) # Padrão SP caso não informado
 
 @router.post("/", summary="Cadastra nova empresa")
 def create_company(company: CompanyCreate, user: dict = Depends(get_current_user)):
@@ -108,6 +109,7 @@ class CompanyUpdate(BaseModel):
     razao_social: Optional[str] = Field(None, min_length=2, max_length=150)
     cnpj: Optional[str] = Field(None, min_length=14)
     regime_tributario: Optional[str] = None
+    uf: Optional[str] = Field(None, min_length=2, max_length=2)
 
 @router.put("/{company_id}", summary="Atualiza uma empresa")
 def update_company(company_id: str, company: CompanyUpdate, user: dict = Depends(get_current_user)):

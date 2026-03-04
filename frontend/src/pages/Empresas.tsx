@@ -20,7 +20,8 @@ export function Empresas() {
     const [newCompany, setNewCompany] = useState({
         razao_social: '',
         cnpj: '',
-        regime_tributario: 'lucro_real'
+        regime_tributario: 'lucro_real',
+        uf: 'SP'
     });
 
     const [isCertModalOpen, setIsCertModalOpen] = useState(false);
@@ -103,7 +104,8 @@ export function Empresas() {
         setNewCompany({
             razao_social: empresa.razao_social,
             cnpj: formatCNPJ(empresa.cnpj),
-            regime_tributario: empresa.regime_tributario || 'lucro_real'
+            regime_tributario: empresa.regime_tributario || 'lucro_real',
+            uf: empresa.uf || 'SP'
         });
         setIsModalOpen(true);
         setOpenMenuId(null);
@@ -128,7 +130,7 @@ export function Empresas() {
             }
             setIsModalOpen(false);
             setEditingCompanyId(null);
-            setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real' });
+            setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real', uf: 'SP' });
             fetchCompanies();
         } catch (error: any) {
             console.error("Failed to save company", error);
@@ -208,15 +210,39 @@ export function Empresas() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Regime Tributário</label>
+                                <label className="block text-xs font-bold text-end-text-sec uppercase mb-1">Estado (UF)</label>
                                 <select
-                                    value={newCompany.regime_tributario}
-                                    onChange={e => setNewCompany({ ...newCompany, regime_tributario: e.target.value })}
+                                    value={newCompany.uf}
+                                    onChange={e => setNewCompany({ ...newCompany, uf: e.target.value })}
                                     className="w-full bg-end-bg border border-end-border rounded p-2 text-white outline-none focus:border-end-accent"
                                 >
-                                    <option value="simples_nacional">Simples Nacional</option>
-                                    <option value="lucro_presumido">Lucro Presumido</option>
-                                    <option value="lucro_real">Lucro Real</option>
+                                    <option value="AC">Acre</option>
+                                    <option value="AL">Alagoas</option>
+                                    <option value="AP">Amapá</option>
+                                    <option value="AM">Amazonas</option>
+                                    <option value="BA">Bahia</option>
+                                    <option value="CE">Ceará</option>
+                                    <option value="DF">Distrito Federal</option>
+                                    <option value="ES">Espírito Santo</option>
+                                    <option value="GO">Goiás</option>
+                                    <option value="MA">Maranhão</option>
+                                    <option value="MT">Mato Grosso</option>
+                                    <option value="MS">Mato Grosso do Sul</option>
+                                    <option value="MG">Minas Gerais</option>
+                                    <option value="PA">Pará</option>
+                                    <option value="PB">Paraíba</option>
+                                    <option value="PR">Paraná</option>
+                                    <option value="PE">Pernambuco</option>
+                                    <option value="PI">Piauí</option>
+                                    <option value="RJ">Rio de Janeiro</option>
+                                    <option value="RN">Rio Grande do Norte</option>
+                                    <option value="RS">Rio Grande do Sul</option>
+                                    <option value="RO">Rondônia</option>
+                                    <option value="RR">Roraima</option>
+                                    <option value="SC">Santa Catarina</option>
+                                    <option value="SP">São Paulo</option>
+                                    <option value="SE">Sergipe</option>
+                                    <option value="TO">Tocantins</option>
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-4">
@@ -225,7 +251,7 @@ export function Empresas() {
                                     onClick={() => {
                                         setIsModalOpen(false);
                                         setEditingCompanyId(null);
-                                        setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real' });
+                                        setNewCompany({ razao_social: '', cnpj: '', regime_tributario: 'lucro_real', uf: 'SP' });
                                     }}
                                     className="flex-1 px-4 py-2 border border-end-border rounded text-end-text-sec hover:bg-white/5 transition-colors"
                                 >
