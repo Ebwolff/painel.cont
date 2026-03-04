@@ -164,6 +164,10 @@ class SefazClient:
             logger.info(f"SEFAZ cStat={cstat} xMotivo={xmot}")
 
             # 138 = Documento(s) localizado(s) | 137 = Nenhum documento (NSU atual)
+            if cstat == "656":
+                logger.warning(f"SEFAZ 656: Consumo Indevido — {xmot}")
+                raise RuntimeError(f"SEFAZ 656: {xmot}")
+
             if cstat not in ("138", "137", "000"):
                 logger.warning(f"SEFAZ retornou status inesperado: {cstat} — {xmot}")
                 return []
