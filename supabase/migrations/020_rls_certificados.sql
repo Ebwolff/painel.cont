@@ -9,5 +9,5 @@ DROP POLICY IF EXISTS tenant_isolation_certs ON certificados_a1;
 -- Leitura: tenant só vê seus certificados
 CREATE POLICY tenant_isolation_certs ON certificados_a1
   FOR ALL
-  USING (tenant_id = auth.jwt() ->> 'tenant_id')
-  WITH CHECK (tenant_id = auth.jwt() ->> 'tenant_id');
+  USING (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid)
+  WITH CHECK (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid);
