@@ -23,14 +23,33 @@ class SefazSyncService:
         self.parser = XMLParserService()
         self.rule_engine = RuleEngineService()
 
-    async def sync_company_documents(self, empresa_id: str, tenant_id: str) -> dict:
+    async def sync_company_documents(self, empresa_id: str, tenant_id: str, triggered_by: str = "manual") -> dict:
         """
         Sincroniza NF-es de uma empresa com a SEFAZ usando certificado A1 real.
         Busca documentos com NSU maior que o último processado (incremental).
-        Inclui: cooldown 656, validação de expiração, lock de deduplicação.
+        Grava o histórico na tabela sync_jobs para observabilidade.
         """
         logger.info(f"SEFAZ SYNC: Iniciando para empresa {empresa_id}")
         admin_client = self.supabase.get_service_client()
+        start_time = datetime.now(timezone.utc)
+        job_id = None
+
+        # ══════════════════════════════════════════
+        # 0. Criar Registro de Job (Observabilidade)
+        # ══════════════════════════════════════════
+        try:
+            job_res = admin_client.table("sync_jobs").insert({
+                "tenant_id": tenant_id,
+                "empresa_id": empresa_id,
+                "status": "running",
+                "triggered_by": triggered_by,
+                "started_at": start_time.isoformat(),
+            }).execute()
+            if job_res.data:
+                job_id = job_res.data[0]["id"]
+                logger.info(f"SEFAZ SYNC: Job {job_id} criado.")
+        except Exception as e:
+            logger.warning(f"SEFAZ SYNC: Falha ao registrar início do job: {e}")
 
         # ══════════════════════════════════════════
         # PRÉ-CHECK 1: Cooldown 656 (Consumo Indevido)
@@ -53,10 +72,19 @@ class SefazSyncService:
                     elapsed = datetime.now(timezone.utc) - last_sync
                     if elapsed < timedelta(minutes=COOLDOWN_MINUTES):
                         remaining = COOLDOWN_MINUTES - int(elapsed.total_seconds() / 60)
+                        msg = f"SEFAZ em cooldown por Consumo Indevido (656). Tente novamente em {remaining} minutos."
                         logger.info(f"SEFAZ SYNC: Cooldown ativo — {remaining}min restantes")
+                        
+                        if job_id:
+                            admin_client.table("sync_jobs").update({
+                                "status": "cooldown",
+                                "finished_at": datetime.now(timezone.utc).isoformat(),
+                                "error_message": msg
+                            }).eq("id", job_id).execute()
+
                         return {
                             "status": "cooldown",
-                            "message": f"SEFAZ em cooldown por Consumo Indevido (656). Tente novamente em {remaining} minutos.",
+                            "message": msg,
                             "retry_after_minutes": remaining,
                         }
                 except (ValueError, TypeError):
@@ -64,8 +92,17 @@ class SefazSyncService:
 
             # PRÉ-CHECK 2: Lock de deduplicação
             if status_atual == "sincronizando":
+                msg = "Sincronização já em andamento. Aguarde."
                 logger.warning(f"SEFAZ SYNC: Já em andamento para empresa {empresa_id}")
-                return {"status": "already_running", "message": "Sincronização já em andamento. Aguarde."}
+                
+                if job_id:
+                    admin_client.table("sync_jobs").update({
+                        "status": "already_running",
+                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                        "error_message": msg
+                    }).eq("id", job_id).execute()
+
+                return {"status": "already_running", "message": msg}
 
         # ══════════════════════════════════════════
         # ADQUIRIR LOCK: status → "sincronizando"
@@ -78,7 +115,14 @@ class SefazSyncService:
             .execute()
         )
         if not lock_res.data:
-            return {"status": "already_running", "message": "Sincronização já em andamento ou certificado inativo."}
+            msg = "Certificado inativo ou já sincronizando."
+            if job_id:
+                admin_client.table("sync_jobs").update({
+                    "status": "blocked",
+                    "finished_at": datetime.now(timezone.utc).isoformat(),
+                    "error_message": msg
+                }).eq("id", job_id).execute()
+            return {"status": "already_running", "message": msg}
 
         try:
             # ══════════════════════════════════════
@@ -440,21 +484,49 @@ class SefazSyncService:
             }
 
         except Exception as e:
-            error_msg = f"erro_interno: {str(e)}"[:200]
+            error_msg = f"erro_interno: {str(e)}"[:500]
             admin_client.table("certificados_a1").update(
-                {"status": error_msg}
+                {"status": f"erro: {error_msg[:170]}"}
             ).eq("empresa_id", empresa_id).execute()
+            
+            if job_id:
+                try:
+                    admin_client.table("sync_jobs").update({
+                        "status": "error",
+                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                        "duration_ms": int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000),
+                        "error_message": error_msg,
+                    }).eq("id", job_id).execute()
+                except Exception: pass
+
             logger.error(f"SEFAZ SYNC: Erro fatal geral durante sync: {e}")
             return {"status": "error", "message": str(e)}
 
         finally:
             # ══════════════════════════════════════
-            # LIBERAR LOCK: status → "ativo" (sempre)
+            # 5. Finalizar Job e Liberar Lock
             # ══════════════════════════════════════
+            if job_id and 'result' in locals() and result.get("status") == "success":
+                try:
+                    end_time = datetime.now(timezone.utc)
+                    duration_ms = int((end_time - start_time).total_seconds() * 1000)
+                    admin_client.table("sync_jobs").update({
+                        "status": "success",
+                        "finished_at": end_time.isoformat(),
+                        "duration_ms": duration_ms,
+                        "notas_processadas": result.get("notas_processadas", 0),
+                        "notas_manifestadas": result.get("notas_manifestadas", 0),
+                        "notas_completas": result.get("notas_completas", 0),
+                        "notas_com_erro": result.get("notas_com_erro", 0),
+                        "novo_nsu": result.get("novo_nsu"),
+                    }).eq("id", job_id).execute()
+                except Exception as e:
+                    logger.warning(f"SEFAZ SYNC: Falha ao fechar job {job_id}: {e}")
+
             try:
                 admin_client.table("certificados_a1").update(
                     {"status": "ativo"}
                 ).eq("empresa_id", empresa_id).eq("status", "sincronizando").execute()
             except Exception:
-                pass  # Se falhar, o status já foi atualizado para erro/656/vencido
+                pass
 

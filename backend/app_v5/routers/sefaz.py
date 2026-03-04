@@ -36,7 +36,7 @@ async def trigger_sync(
             raise HTTPException(status_code=403, detail="Escritório não identificado para este usuário.")
 
         if use_worker:
-            # Celery: job rastreado via sync_jobs
+            # Celery: job rastreado via sync_jobs (agora feito dentro do service chamado pelo worker)
             try:
                 from app_v5.worker import sefaz_sync_task
                 task = sefaz_sync_task.delay(empresa_id, tenant_id, "manual")
@@ -47,11 +47,11 @@ async def trigger_sync(
                 }
             except Exception as e:
                 logger.warning(f"SEFAZ: Celery indisponível, usando fallback: {e}")
-                # Fallback para BackgroundTasks
-                background_tasks.add_task(sync_service.sync_company_documents, empresa_id, tenant_id)
+                # Fallback para BackgroundTasks — agora passamos triggered_by para o service registrar o job
+                background_tasks.add_task(sync_service.sync_company_documents, empresa_id, tenant_id, triggered_by="background_fallback")
                 return {"message": "Sincronização iniciada em segundo plano (fallback).", "mode": "background"}
         else:
-            background_tasks.add_task(sync_service.sync_company_documents, empresa_id, tenant_id)
+            background_tasks.add_task(sync_service.sync_company_documents, empresa_id, tenant_id, triggered_by="manual_background")
             return {"message": "Sincronização iniciada em segundo plano.", "mode": "background"}
 
     except HTTPException:
