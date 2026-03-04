@@ -190,7 +190,7 @@ async def debug_env():
         "status": "online",
         "env_check": env_status,
         "db_test": {
-            "version": "v5-bust",
+            "version": "v6-sefaz-fix",
             "status": db_status,
             "counts": db_counts,
             "error": db_error
