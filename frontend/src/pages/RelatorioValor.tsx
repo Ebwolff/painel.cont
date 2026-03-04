@@ -138,7 +138,7 @@ export function RelatorioValor() {
                         <p className="text-3xl font-black text-end-warning">
                             {glosaFormatada}
                         </p>
-                        {stats.notas_com_erro === 0 && (
+                        {(roiData?.potencial_glosa || 0) === 0 && (
                             <span className="text-[10px] text-end-success font-bold uppercase flex items-center gap-1">
                                 <ShieldCheck size={12} /> Seguro
                             </span>
