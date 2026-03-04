@@ -31,7 +31,7 @@ def main():
     client.table('empresas').update({'uf': 'GO'}).eq('cnpj', '16968599000191').execute()
     client.table('empresas').update({'uf': 'GO'}).eq('cnpj', '16.968.599/0001-91').execute()
     
-    res_reset = client.table('certificados_a1').update({'status': 'ativo'}).execute()
+    res_reset = client.table('certificados_a1').update({'status': 'ativo'}).neq('status', 'ativo').execute()
     print(f"Sucesso! {len(res_reset.data)} certificados resetados para 'ativo'.")
 
     # 3. Mostrar estado final
