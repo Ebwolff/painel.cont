@@ -46,7 +46,8 @@ class SupabaseService:
             return encrypted_data
         try:
             return self.fernet.decrypt(encrypted_data.encode()).decode()
-        except Exception:
+        except Exception as e:
+            logger.error(f"FALHA ENCRYPTION DECRYPT: {type(e).__name__} - {e}")
             return "[ERRO_AO_DESCRIPTOGRAFAR]"
 
     def log_audit(self, user_id: str, tenant_id: str, action: str, resource: str, resource_id: str = None, details: dict = None, ip: str = None):

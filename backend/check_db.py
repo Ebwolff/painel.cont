@@ -1,28 +1,39 @@
-from app.core.supabase_client import SupabaseService
+import asyncio
 import os
+import sys
 
-def check_db():
-    svc = SupabaseService()
-    client = svc.get_client()
+sys.path.append(os.path.join(os.path.dirname(__file__), "app_v5"))
+sys.path.append(os.path.dirname(__file__))
+
+from dotenv import load_dotenv
+load_dotenv()
+
+from app_v5.core.supabase_client import SupabaseService
+
+async def check_db_tables():
+    supa = SupabaseService().get_service_client()
     
-    tenant_id = "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+    print("--- CONTAGEM DE DADOS ---")
     
-    # Check if tenant exists
-    res = client.table("tenants").select("*").eq("id", tenant_id).execute()
-    print(f"Tenant check: {res.data}")
-    
-    if not res.data:
-        print("Creating seed tenant...")
-        # Try to insert a seed tenant
-        try:
-            res = client.table("tenants").insert({
-                "id": tenant_id,
-                "nome": "Escritório Modelo END",
-                "cnpj": "00.000.000/0001-00"
-            }).execute()
-            print(f"Tenant created: {res.data}")
-        except Exception as e:
-            print(f"Error creating tenant: {e}")
+    try:
+        res = supa.table("notas_fiscais").select("id", count="exact").limit(1).execute()
+        print(f"Total notas_fiscais (tabela principal): {res.count}")
+    except Exception as e:
+        print(f"Erro ao contar notas_fiscais: {e}")
+
+    try:
+        res = supa.table("nfe_items").select("id", count="exact").limit(1).execute()
+        print(f"Total nfe_items (tabela principal): {res.count}")
+    except Exception as e:
+        print(f"Erro ao contar nfe_items: {e}")
+        
+    try:
+        res = supa.table("certificados_a1").select("status, empresa_id, ultimo_nsu, ultimo_sync").execute()
+        print("\n--- CERTIFICADOS ATUAIS ---")
+        for c in res.data:
+            print(f"Empresa: {c['empresa_id']} | Status: {c['status']} | NSU: {c['ultimo_nsu']} | Sync: {c['ultimo_sync']}")
+    except Exception as e:
+        print(f"Erro ao listar certificados: {e}")
 
 if __name__ == "__main__":
-    check_db()
+    asyncio.run(check_db_tables())

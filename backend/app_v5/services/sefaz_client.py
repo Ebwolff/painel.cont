@@ -130,6 +130,10 @@ class SefazClient:
         except requests.exceptions.Timeout:
             logger.error("SEFAZ: Timeout na requisição")
             raise RuntimeError("SEFAZ não respondeu dentro do tempo limite.")
+        except requests.exceptions.HTTPError as e:
+            err_msg = e.response.text if e.response else str(e)
+            logger.error(f"SEFAZ: Erro HTTP {e.response.status_code}: {err_msg}")
+            raise RuntimeError(f"Erro SEFAZ HTTP {e.response.status_code}: {err_msg[:500]}")
         except requests.exceptions.RequestException as e:
             logger.error(f"SEFAZ: Erro de conexão: {e}")
             raise RuntimeError(f"Erro de conexão com a SEFAZ: {e}")
