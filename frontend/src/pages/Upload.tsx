@@ -12,10 +12,12 @@ export function Upload() {
     const [companies, setCompanies] = useState<any[]>([]);
     const [selectedCompany, setSelectedCompany] = useState<string>('');
     const [isDragging, setIsDragging] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
-    const [result, setResult] = useState<any>(null);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+    const [results, setResults] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
+
 
     React.useEffect(() => {
         async function fetchCompanies() {
@@ -43,10 +45,10 @@ export function Upload() {
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile && droppedFile.name.endsWith('.xml')) {
-            setFile(droppedFile);
-            setResult(null);
+        const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.xml'));
+        if (droppedFiles.length > 0) {
+            setFiles(prev => [...prev, ...droppedFiles]);
+            setResults([]);
             setError(null);
         } else {
             setError("Apenas arquivos .xml são permitidos.");
@@ -54,11 +56,11 @@ export function Upload() {
     }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const selected = e.target.files[0];
-            if (selected.name.endsWith('.xml')) {
-                setFile(selected);
-                setResult(null);
+        if (e.target.files && e.target.files.length > 0) {
+            const selectedFiles = Array.from(e.target.files).filter(f => f.name.endsWith('.xml'));
+            if (selectedFiles.length > 0) {
+                setFiles(prev => [...prev, ...selectedFiles]);
+                setResults([]);
                 setError(null);
             } else {
                 setError("Apenas arquivos .xml são permitidos.");
@@ -67,41 +69,51 @@ export function Upload() {
     };
 
     const handleUpload = async () => {
-        if (!file) return;
+        if (files.length === 0) return;
 
         setUploading(true);
         setError(null);
+        setUploadProgress({ current: 0, total: files.length });
+        setResults([]);
 
-        const formData = new FormData();
-        formData.append('file', file);
-        if (selectedCompany) {
-            formData.append('empresa_id', selectedCompany);
+        const BATCH_SIZE = 3; // Lote de envios paralelos para não sobrecarregar
+        let processedCount = 0;
+        const newResults: any[] = [];
+
+        for (let i = 0; i < files.length; i += BATCH_SIZE) {
+            const batch = files.slice(i, i + BATCH_SIZE);
+            const batchPromises = batch.map(async (f) => {
+                const formData = new FormData();
+                formData.append('file', f);
+                if (selectedCompany) {
+                    formData.append('empresa_id', selectedCompany);
+                }
+
+                try {
+                    const data = await api.upload('/upload/xml', formData);
+                    return {
+                        file: f.name,
+                        success: true,
+                        data: data
+                    };
+                } catch (err: any) {
+                    return {
+                        file: f.name,
+                        success: false,
+                        error: err.message || "Erro no processamento"
+                    };
+                }
+            });
+
+            const batchResults = await Promise.all(batchPromises);
+            newResults.push(...batchResults);
+
+            processedCount += batch.length;
+            setUploadProgress({ current: processedCount, total: files.length });
         }
 
-        try {
-            const data = await api.upload('/upload/xml', formData);
-
-            if (data.status === 'enqueued') {
-                setResult({
-                    _async: true,
-                    job_id: data.job_id,
-                    message: data.message || 'Nota enviada para processamento.'
-                });
-            } else if (data.status === 'already_processed') {
-                setResult({
-                    _async: true,
-                    already_exists: true,
-                    message: data.message || 'Esta nota já foi processada anteriormente.'
-                });
-            } else {
-                setResult(data);
-            }
-        } catch (err: any) {
-            setError(err.message || "Erro ao processar o arquivo. Verifique se o backend está rodando.");
-            console.error(err);
-        } finally {
-            setUploading(false);
-        }
+        setResults(newResults);
+        setUploading(false);
     };
 
     return (
@@ -152,7 +164,7 @@ export function Upload() {
                         className={cn(
                             "border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center transition-colors cursor-pointer",
                             isDragging ? "border-end-accent bg-end-accent/5" : "border-end-border bg-end-card hover:bg-white/5",
-                            result && "border-end-success"
+                            results.length > 0 && "border-end-success"
                         )}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
@@ -161,6 +173,7 @@ export function Upload() {
                         <input
                             type="file"
                             accept=".xml"
+                            multiple
                             className="hidden"
                             id="file-upload"
                             onChange={handleFileChange}
@@ -170,7 +183,7 @@ export function Upload() {
                                 <UploadCloud size={32} />
                             </div>
                             <p className="text-lg font-medium text-white">
-                                {file ? file.name : "Arraste e solte o XML aqui"}
+                                {files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : "Arraste e solte o(s) XML(s) aqui"}
                             </p>
                             <p className="text-sm text-end-text-sec mt-2">
                                 ou clique para selecionar do computador
@@ -186,16 +199,38 @@ export function Upload() {
                         </div>
                     )}
 
-                    {/* Upload Button */}
-                    {file && !result && (
-                        <div className="mt-6 flex justify-end">
+                    {/* Upload Button & Progress */}
+                    {files.length > 0 && results.length === 0 && !uploading && (
+                        <div className="mt-6 flex justify-between items-center">
+                            <button
+                                onClick={() => setFiles([])}
+                                className="text-end-text-sec hover:text-white transition-colors text-sm font-bold uppercase tracking-widest"
+                            >
+                                Limpar
+                            </button>
                             <button
                                 onClick={handleUpload}
                                 disabled={uploading}
                                 className="bg-end-accent hover:bg-end-accent-hover text-black font-bold py-2.5 px-6 rounded-md transition-colors disabled:opacity-50"
                             >
-                                {uploading ? "Processando..." : "Analisar Conformidade"}
+                                Iniciar Processamento ({files.length} notas)
                             </button>
+                        </div>
+                    )}
+
+                    {/* Progress Bar */}
+                    {uploading && (
+                        <div className="mt-6 space-y-2 animate-in slide-in-from-bottom-2">
+                            <div className="flex justify-between text-sm font-bold">
+                                <span className="text-end-accent">Enviando notas para a fila de auditoria...</span>
+                                <span className="text-white">{uploadProgress.current} / {uploadProgress.total}</span>
+                            </div>
+                            <div className="h-2 bg-end-bg rounded-full overflow-hidden border border-end-border">
+                                <div
+                                    className="h-full bg-end-accent transition-all duration-300"
+                                    style={{ width: `${uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : 0}%` }}
+                                ></div>
+                            </div>
                         </div>
                     )}
                 </>
@@ -231,120 +266,64 @@ export function Upload() {
                 </div>
             )}
 
-            {/* Results */}
-            {result && result._async && (
+            {/* Results Table */}
+            {results.length > 0 && (
                 <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                    <div className={cn(
-                        "p-6 rounded-lg border flex items-center gap-4",
-                        result.already_exists
-                            ? "bg-end-accent/10 border-end-accent/30 text-end-accent"
-                            : "bg-end-success/10 border-end-success text-end-success"
-                    )}>
-                        {result.already_exists ? <AlertTriangle size={32} /> : <CheckCircle size={32} />}
-                        <div>
-                            <div className="text-lg font-bold uppercase">
-                                {result.already_exists ? "Nota Já Processada" : "Nota Enviada com Sucesso"}
-                            </div>
-                            <p className="text-sm opacity-80">
-                                {result.message}
-                            </p>
-                            {result.job_id && (
-                                <p className="text-xs opacity-60 mt-1 font-mono">
-                                    Job ID: {result.job_id}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                    <div className="text-center">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-white">Resultados do Envio ({results.length})</h2>
                         <button
-                            onClick={() => { setFile(null); setResult(null); setError(null); }}
-                            className="bg-end-accent hover:bg-end-accent/90 text-black font-bold py-2.5 px-6 rounded-md transition-colors"
+                            onClick={() => { setFiles([]); setResults([]); setError(null); }}
+                            className="bg-end-bg hover:bg-white/5 border border-end-border text-white font-bold py-2 px-4 rounded-md transition-colors text-sm"
                         >
-                            Enviar Outra Nota
+                            Novo Lote
                         </button>
                     </div>
-                </div>
-            )}
 
-            {result && !result._async && (
-                <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                    <h2 className="text-xl font-bold text-white">Resultado da Análise</h2>
-
-                    {/* Status Card */}
-                    {result.already_exists && (
-                        <div className="mb-6 p-4 bg-end-accent/10 border border-end-accent/30 rounded-lg flex items-center gap-3 text-end-accent">
-                            <AlertTriangle size={20} />
-                            <div className="text-sm font-medium">Nota já processada anteriormente. Exibindo dados extraídos do banco de dados.</div>
-                        </div>
-                    )}
-
-                    <div className={cn(
-                        "p-6 rounded-lg border flex items-center gap-4",
-                        result.validation?.status === 'conforme'
-                            ? "bg-end-success/10 border-end-success text-end-success"
-                            : "bg-end-error/10 border-end-error text-end-error"
-                    )}>
-                        {result.validation?.status === 'conforme' ? <CheckCircle size={32} /> : <XCircle size={32} />}
-                        <div>
-                            <div className="text-lg font-bold uppercase">
-                                {result.validation?.status === 'conforme' ? "Conformidade Total" : "Divergência Encontrada"}
-                            </div>
-                            <p className="text-sm opacity-80">
-                                {result.validation?.status === 'conforme'
-                                    ? "Os tributos foram validados de acordo com as regras fiscais vigentes."
-                                    : "Foram identificados erros de cálculo ou alíquotas incorretas nos tributos analisados."}
-                            </p>
-                        </div>
+                    <div className="bg-end-card border border-end-border rounded-lg overflow-hidden">
+                        <table className="w-full text-left text-sm text-end-text-sec">
+                            <thead className="text-xs uppercase bg-black/20 text-end-text">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold tracking-widest">Arquivo</th>
+                                    <th className="px-6 py-4 font-bold tracking-widest text-center">Status</th>
+                                    <th className="px-6 py-4 font-bold tracking-widest">Detalhes</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-end-border">
+                                {results.map((res, index) => (
+                                    <tr key={index} className="hover:bg-white/[0.02] transition-colors">
+                                        <td className="px-6 py-4 font-medium text-white font-mono break-all max-w-[200px] truncate">
+                                            {res.file}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            {res.success ? (
+                                                res.data.status === 'already_processed' || res.data.already_exists ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-end-accent/10 border border-end-accent/30 text-end-accent text-xs font-bold uppercase tracking-widest">
+                                                        <AlertTriangle size={12} /> Duplicada
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-end-success/10 border border-end-success/30 text-end-success text-xs font-bold uppercase tracking-widest">
+                                                        <CheckCircle size={12} /> Na Fila
+                                                    </span>
+                                                )
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-end-error/10 border border-end-error/30 text-end-error text-xs font-bold uppercase tracking-widest">
+                                                    <XCircle size={12} /> Erro
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs opacity-80">
+                                            {res.success ?
+                                                res.data.message :
+                                                res.error}
+                                            {res.data && res.data.job_id && (
+                                                <div className="text-[10px] font-mono mt-1 opacity-50 text-end-text-sec">JOB ID: {res.data.job_id}</div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-
-                    {/* Details Grid */}
-                    {result.parsed_data && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-end-card border border-end-border p-5 rounded-lg">
-                                <h3 className="text-sm font-medium text-end-text-sec mb-4 uppercase tracking-wider">Dados da Nota</h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between border-b border-end-border pb-2">
-                                        <span className="text-end-text-sec">Número</span>
-                                        <span className="text-white font-mono">{result.parsed_data.numero}</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-end-border pb-2">
-                                        <span className="text-end-text-sec">Emitente</span>
-                                        <span className="text-white">{result.parsed_data.emitente_nome?.substring(0, 20)}...</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-end-border pb-2">
-                                        <span className="text-end-text-sec">Valor Total</span>
-                                        <span className="text-white font-mono font-bold">R$ {result.parsed_data.valor_total?.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {result.validation?.validation_details && (
-                                <div className="bg-end-card border border-end-border p-5 rounded-lg">
-                                    <h3 className="text-sm font-medium text-end-text-sec mb-4 uppercase tracking-wider">Validação Tributária</h3>
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center border-b border-end-border pb-2">
-                                            <span className="text-end-text-sec">CBS (0.9%)</span>
-                                            <div className="text-right">
-                                                <div className={cn("font-mono font-bold", result.validation.validation_details.cbs_ok ? "text-end-success" : "text-end-error")}>
-                                                    {result.parsed_data.valor_cbs?.toFixed(2)}
-                                                </div>
-                                                <div className="text-xs text-end-text-sec">Esperado: {result.validation.validation_details.cbs_esperado?.toFixed(2)}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between items-center border-b border-end-border pb-2">
-                                            <span className="text-end-text-sec">IBS (0.1%)</span>
-                                            <div className="text-right">
-                                                <div className={cn("font-mono font-bold", result.validation.validation_details.ibs_ok ? "text-end-success" : "text-end-error")}>
-                                                    {result.parsed_data.valor_ibs?.toFixed(2)}
-                                                </div>
-                                                <div className="text-xs text-end-text-sec">Esperado: {result.validation.validation_details.ibs_esperado?.toFixed(2)}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </div>
             )}
         </div>
