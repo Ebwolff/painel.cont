@@ -107,15 +107,28 @@ class SefazSyncService:
         # ══════════════════════════════════════════
         # ADQUIRIR LOCK: status → "sincronizando"
         # ══════════════════════════════════════════
+        # Se o status atual for 'ativo', 'erro' ou começar com 'erro:', permitimos a transição para 'sincronizando'
+        pode_sincronizar = (status_atual in ["ativo", "erro"]) or (status_atual and status_atual.startswith("erro:"))
+        
+        if not pode_sincronizar:
+            msg = f"Certificado em estado '{status_atual}' (inativo, vencido ou já sincronizando)."
+            if job_id:
+                admin_client.table("sync_jobs").update({
+                    "status": "blocked",
+                    "finished_at": datetime.now(timezone.utc).isoformat(),
+                    "error_message": msg
+                }).eq("id", job_id).execute()
+            return {"status": "already_running", "message": msg}
+
         lock_res = (
             admin_client.table("certificados_a1")
             .update({"status": "sincronizando"})
             .eq("empresa_id", empresa_id)
-            .in_("status", ["ativo", "erro"])  # Só tranca se está ativo ou com erro anterior
+            .eq("status", status_atual) # Safe update: ensure status didn't change meanwhile
             .execute()
         )
         if not lock_res.data:
-            msg = "Certificado inativo ou já sincronizando."
+            msg = "Falha ao adquirir lock (status alterado por outro processo)."
             if job_id:
                 admin_client.table("sync_jobs").update({
                     "status": "blocked",
