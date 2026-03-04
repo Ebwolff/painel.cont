@@ -60,7 +60,7 @@ async def list_invoices(
         if search:
             query = query.or_(f"numero.ilike.%{search}%,chave_acesso.ilike.%{search}%")
 
-        # Filtro de Direção (Baseado nos CNPJs das empresas sob gestão)
+        # Filtro de Direção (Robustamente baseado no emitente)
         if direcao == "saida":
             # Emitidas: emitente_cnpj está na lista de CNPJs do escritório
             if cnpjs:
@@ -68,9 +68,9 @@ async def list_invoices(
             else:
                 return {"data": [], "total": 0, "page": page, "limit": limit}
         elif direcao == "entrada":
-            # Recebidas: destinatario_cnpj está na lista de CNPJs do escritório
+            # Recebidas: emitente_cnpj NÃO está na lista (fallback seguro para resumos)
             if cnpjs:
-                query = query.in_("destinatario_cnpj", cnpjs)
+                query = query.not_.in_("emitente_cnpj", cnpjs)
             else:
                 return {"data": [], "total": 0, "page": page, "limit": limit}
 

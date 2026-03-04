@@ -262,6 +262,10 @@ class SefazSyncService:
                 try:
                     nfe_data = self.parser.parse_nfe(doc["xml_content"])
                     is_resumo = nfe_data.get("is_resumo", False)
+                    
+                    # Se for resumo e não fomos nós que emitimos, o destinatário somos nós
+                    if is_resumo and nfe_data.get("emitente_cnpj") != cnpj:
+                        nfe_data["destinatario_cnpj"] = cnpj
 
                     if is_resumo:
                         validation_result = {
