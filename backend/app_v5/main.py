@@ -122,7 +122,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug, items, simulation, features, anomalies, admin_rules
+from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug, items, simulation, features, anomalies, admin_rules, notas
 
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(debug.router, prefix="/api/dashboard", tags=["Dashboard"])
@@ -133,6 +133,7 @@ app.include_router(roi.router, prefix="/api/roi", tags=["ROI"])
 app.include_router(certificates.router, prefix="/api/certificates", tags=["Certificates"])
 app.include_router(sefaz.router, prefix="/api/sefaz", tags=["SEFAZ"])
 app.include_router(items.router, prefix="/api/items", tags=["Items"])
+app.include_router(notas.router, prefix="/api/notas", tags=["Notas"])
 app.include_router(simulation.router, prefix="/api/simulation", tags=["Simulation"])
 app.include_router(features.router, prefix="/api/features", tags=["Features"])
 app.include_router(anomalies.router, prefix="/api/anomalies", tags=["Anomalies"])

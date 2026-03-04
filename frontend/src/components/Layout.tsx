@@ -22,6 +22,7 @@ export function Layout() {
     const allNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/', feature: null },
         { icon: TrendingUp, label: 'Relatório de Valor', path: '/valor', feature: 'roi_summary' },
+        { icon: ShieldCheck, label: 'Monitor Fiscal', path: '/monitor', feature: null },
         { icon: ShieldCheck, label: 'Simulador NFe', path: '/simulador', feature: null },
         { icon: UploadCloud, label: 'Upload XML', path: '/upload', feature: 'upload_manual' },
         { icon: AlertTriangle, label: 'Alertas', path: '/alertas', feature: 'basic_monitor' },

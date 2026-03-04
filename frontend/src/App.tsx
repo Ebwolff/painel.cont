@@ -20,6 +20,8 @@ import { RegrasFiscais } from './pages/admin/RegrasFiscais';
 import { Users } from './pages/Users';
 import { ClientDashboard } from './pages/client/ClientDashboard';
 
+import { MonitorFiscal } from './pages/MonitorFiscal';
+
 // Protected Route Component
 function RequireAuth({ children, requireAdmin = false, requireSuperAdmin = false }: { children: JSX.Element, requireAdmin?: boolean, requireSuperAdmin?: boolean }) {
     const { session, loading, isAdmin, isSuperAdmin } = useAuth();
@@ -67,8 +69,8 @@ function App() {
                         </RequireAuth>
                     }>
                         <Route index element={<Dashboard />} />
+                        <Route path="monitor" element={<MonitorFiscal />} />
                         <Route path="valor" element={<RelatorioValor />} />
-                        <Route path="simulador" element={<SimuladorNFe />} />
                         <Route path="simulador" element={<SimuladorNFe />} />
                         <Route path="upload" element={<Upload />} />
                         <Route path="alertas" element={<Alertas />} />
