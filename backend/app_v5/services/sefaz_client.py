@@ -3,7 +3,6 @@ SefazClient — Integração real com webservice nfeDistDFeInteresse da SEFAZ.
 Autentica via certificado A1 (PFX) e retorna XMLs de NF-e para processamento.
 Segurança: mTLS em memória (requests_pkcs12), TLS 1.2 mínimo.
 """
-import ssl
 import logging
 import requests
 from typing import Optional
@@ -16,10 +15,7 @@ from lxml import etree
 
 logger = logging.getLogger(__name__)
 
-# Forçar TLS 1.2 mínimo (exigido pela SEFAZ)
-_tls_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-_tls_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-_tls_ctx.load_default_certs()
+
 
 # Endpoints por ambiente
 SEFAZ_ENDPOINTS = {
@@ -114,7 +110,6 @@ class SefazClient:
                 pkcs12_password=password,
                 verify=True,
                 timeout=self.timeout,
-                tls_context=_tls_ctx,
             )
             response.raise_for_status()
             logger.info(f"SEFAZ: Resposta recebida — HTTP {response.status_code}")
@@ -329,7 +324,6 @@ class SefazClient:
                 pkcs12_password=password,
                 verify=True,
                 timeout=self.timeout,
-                tls_context=_tls_ctx,
             )
             response.raise_for_status()
             return self._parse_evento_response(response.content)
