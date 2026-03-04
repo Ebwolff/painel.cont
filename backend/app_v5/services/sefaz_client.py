@@ -62,24 +62,23 @@ class SefazClient:
         # cUF 35 = São Paulo (padrão; a SEFAZ distribui para todos os estados)
         codigo_uf = os.getenv("SEFAZ_UF", "35")
 
-        envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope
-    xmlns:soapenv="{SOAP_NS}"
-    xmlns:nfe="{NFE_NS}">
-  <soapenv:Header/>
-  <soapenv:Body>
-    <nfeDadosMsg xmlns="{NFE_NS}">
-      <distDFeInt versao="1.01" xmlns="{NFE_NS}">
-        <tpAmb>{'1' if self.ambiente == 'producao' else '2'}</tpAmb>
-        <cUFAutor>{codigo_uf}</cUFAutor>
-        <CNPJ>{cnpj_limpo}</CNPJ>
-        <distNSU>
-          <ultNSU>{ultimo_nsu.zfill(15)}</ultNSU>
-        </distNSU>
-      </distDFeInt>
-    </nfeDadosMsg>
-  </soapenv:Body>
-</soapenv:Envelope>"""
+        envelope = f"""<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe">
+      <nfeDadosMsg>
+        <distDFeInt versao="1.01" xmlns="{NFE_NS}">
+          <tpAmb>{'1' if self.ambiente == 'producao' else '2'}</tpAmb>
+          <cUFAutor>{codigo_uf}</cUFAutor>
+          <CNPJ>{cnpj_limpo}</CNPJ>
+          <distNSU>
+            <ultNSU>{ultimo_nsu.zfill(15)}</ultNSU>
+          </distNSU>
+        </distDFeInt>
+      </nfeDadosMsg>
+    </nfeDistDFeInteresse>
+  </soap12:Body>
+</soap12:Envelope>"""
         return envelope
 
     def call_sefaz(
@@ -131,9 +130,10 @@ class SefazClient:
             logger.error("SEFAZ: Timeout na requisição")
             raise RuntimeError("SEFAZ não respondeu dentro do tempo limite.")
         except requests.exceptions.HTTPError as e:
-            err_msg = e.response.text if e.response else str(e)
-            logger.error(f"SEFAZ: Erro HTTP {e.response.status_code}: {err_msg}")
-            raise RuntimeError(f"Erro SEFAZ HTTP {e.response.status_code}: {err_msg[:500]}")
+            err_msg = e.response.content.decode("utf-8", errors="replace") if e.response is not None else str(e)
+            print(f">>>> RAW HTML/XML SEFAZ <<<<\n{err_msg}\n>>>>>>>>>>>>>>>")
+            logger.error(f"SEFAZ: Erro HTTP {e.response.status_code if e.response else 'Unknown'}: {err_msg}")
+            raise RuntimeError(f"Erro SEFAZ HTTP {e.response.status_code if e.response else 'Unknown'}: {err_msg[:500]}")
         except requests.exceptions.RequestException as e:
             logger.error(f"SEFAZ: Erro de conexão: {e}")
             raise RuntimeError(f"Erro de conexão com a SEFAZ: {e}")

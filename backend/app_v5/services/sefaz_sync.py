@@ -99,7 +99,17 @@ class SefazSyncService:
             for doc in documentos:
                 try:
                     nfe_data = self.parser.parse_nfe(doc["xml_content"])
-                    validation_result = self.rule_engine.validate_nfe(nfe_data)
+                    is_resumo = nfe_data.get("is_resumo", False)
+                    
+                    if is_resumo:
+                        validation_result = {
+                            "status": "pendente_manifestacao",
+                            "alertas": [],
+                            "validation_details": {"cbs_ok": None, "ibs_ok": None},
+                            "items_results": []
+                        }
+                    else:
+                        validation_result = self.rule_engine.validate_nfe(nfe_data)
 
                     nota_id = self.supabase.insert_nfe_result(
                         nfe_data,
@@ -108,40 +118,41 @@ class SefazSyncService:
                         empresa_id=empresa_id,
                     )
 
-                    # Persistir itens
-                    items_results = validation_result.get("items_results", [])
-                    for i, item in enumerate(nfe_data.get("itens", [])):
-                        item_result = items_results[i] if i < len(items_results) else {}
-                        admin_client.table("nfe_items").insert({
-                            "tenant_id": tenant_id,
-                            "nota_fiscal_id": nota_id,
-                            "n_item": item.get("n_item"),
-                            "ncm": item.get("ncm"),
-                            "cfop": item.get("cfop"),
-                            "cst": item.get("cst"),
-                            "v_prod": item.get("v_prod"),
-                            "v_cbs": item.get("v_cbs"),
-                            "v_ibs": item.get("v_ibs"),
-                            "cbs_correto": item_result.get("cbs_ok", True),
-                            "ibs_correto": item_result.get("ibs_ok", True),
-                        }).execute()
+                    if not is_resumo:
+                        # Persistir itens
+                        items_results = validation_result.get("items_results", [])
+                        for i, item in enumerate(nfe_data.get("itens", [])):
+                            item_result = items_results[i] if i < len(items_results) else {}
+                            admin_client.table("nfe_items").insert({
+                                "tenant_id": tenant_id,
+                                "nota_fiscal_id": nota_id,
+                                "n_item": item.get("n_item"),
+                                "ncm": item.get("ncm"),
+                                "cfop": item.get("cfop"),
+                                "cst": item.get("cst"),
+                                "v_prod": item.get("v_prod"),
+                                "v_cbs": item.get("v_cbs"),
+                                "v_ibs": item.get("v_ibs"),
+                                "cbs_correto": item_result.get("cbs_ok", True),
+                                "ibs_correto": item_result.get("ibs_ok", True),
+                            }).execute()
 
-                    # Gerar alertas
-                    for alerta in validation_result.get("alertas", []):
-                        admin_client.table("alerts_management").insert({
-                            "tenant_id": tenant_id,
-                            "empresa_id": empresa_id,
-                            "nfe_id": nota_id,
-                            "rule_id": alerta.get("rule_id"),
-                            "status": "open",
-                        }).execute()
+                        # Gerar alertas
+                        for alerta in validation_result.get("alertas", []):
+                            admin_client.table("alerts_management").insert({
+                                "tenant_id": tenant_id,
+                                "empresa_id": empresa_id,
+                                "nfe_id": nota_id,
+                                "rule_id": alerta.get("rule_id"),
+                                "status": "open",
+                            }).execute()
 
                     # Atualiza NSU máximo processado
                     if doc["nsu"] > novo_nsu:
                         novo_nsu = doc["nsu"]
 
                     notas_ok += 1
-                    logger.info(f"SEFAZ SYNC: Nota {nfe_data.get('chave_acesso', 'N/A')[:20]}... processada")
+                    logger.info(f"SEFAZ SYNC: Nota {nfe_data.get('chave_acesso', 'N/A')[:20]}... processada (Resumo={is_resumo})")
 
                 except Exception as e:
                     notas_erro += 1

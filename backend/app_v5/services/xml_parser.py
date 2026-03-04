@@ -50,16 +50,42 @@ class XMLParserService:
             if root is None:
                 raise ValueError("Arquivo XML corrompido ou mal formatado.")
 
-            # 1. Localizar infNFe de forma universal
-            # Busca em qualquer nível um elemento cujo nome seja 'infNFe'
             inf_nfe_elements = root.xpath("//*[local-name()='infNFe']")
+            res_nfe_elements = root.xpath("//*[local-name()='resNFe']")
             
+            if res_nfe_elements:
+                # É um Resumo de NFe, comum na rota de Distribuição DF-e da SEFAZ
+                root = res_nfe_elements[0]
+                chave = self._get_text(root, "chNFe")
+                
+                # Extrair numero e serie da chave de acesso (seja qual for o estado civil)
+                numero = str(int(chave[25:34])) if chave and len(chave) == 44 else None
+                serie = str(int(chave[22:25])) if chave and len(chave) == 44 else None
+                
+                return {
+                    "chave_acesso": chave,
+                    "numero": numero,
+                    "serie": serie,
+                    "data_emissao": self._get_text(root, "dhEmi"),
+                    "emitente_cnpj": self._get_text(root, "CNPJ") or self._get_text(root, "CPF"),
+                    "emitente_nome": self._get_text(root, "xNome"),
+                    "emitente_uf": None,  # Não presente no resumo
+                    "destinatario_cnpj": None, # Não presente no resumo, apenas em notas inteiras
+                    "destinatario_nome": None,
+                    "destinatario_uf": None,
+                    "valor_total": float(self._get_text(root, "vNF") or 0.0),
+                    "valor_cbs": 0.0,
+                    "valor_ibs": 0.0,
+                    "itens": [],
+                    "is_resumo": True  # Flag crucial para o sefaz_sync.py saber não aplicar certas regras
+                }
+                
             if inf_nfe_elements:
                 root = inf_nfe_elements[0]
             elif not (root.tag.endswith('infNFe') or 'infNFe' in root.tag):
                 # Se não achou via XPath e o raiz também não é, falhou
                 logger.error(f"Estrutura NFe inválida. Tag Raiz: {root.tag}. Snippet: {xml_content[:100].decode('utf-8', 'ignore')}")
-                raise ValueError("Estrutura de NF-e inválida: infNFe não encontrada.")
+                raise ValueError("Estrutura de NF-e inválida: infNFe ou resNFe não encontrada.")
             
             # Se chegou aqui, root é o infNFe ou o elemento que o contém (se o else acima não pegou)
             # Garantir que temos o ID da nota (Chave de Acesso)
