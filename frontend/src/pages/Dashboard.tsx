@@ -14,6 +14,7 @@ interface DashboardMetrics {
     notas_com_erro: number;
     valor_bens_servicos: number;
     credito_tributario_potencial: number;
+    ultima_sincronizacao?: string;
     status: 'seguro' | 'atencao' | 'critico';
 }
 
@@ -114,6 +115,7 @@ export function Dashboard() {
         notas_com_erro: metrics?.notas_com_erro ?? 0,
         valor_bens_servicos: metrics?.valor_bens_servicos ?? 0,
         credito_tributario_potencial: metrics?.credito_tributario_potencial ?? 0,
+        ultima_sincronizacao: metrics?.ultima_sincronizacao,
         status: metrics?.status ?? 'seguro'
     };
 
@@ -122,20 +124,32 @@ export function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold text-white mb-2">Painel de Controle</h2>
-                    <p className="text-end-text-sec">Bem-vindo ao END Monitor. Aqui está o resumo da conformidade tributária.</p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-end-text-sec">Bem-vindo ao END Monitor. Resumo da conformidade tributária.</p>
+                        {stats.ultima_sincronizacao && (
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-end-text-sec uppercase font-bold">
+                                <Activity size={12} className="text-end-success animate-pulse" />
+                                Monitor Ativo: {new Date(stats.ultima_sincronizacao).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* ROI / Value Realization Card */}
                 {roiData && (
                     <div className="bg-end-accent/10 border border-end-accent/20 rounded-lg p-4 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 bg-end-accent rounded-full flex items-center justify-center text-black">
+                            <div className="h-12 w-12 bg-end-accent rounded-full flex items-center justify-center text-black shadow-[0_0_15px_rgba(255,160,0,0.3)]">
                                 <TrendingUp size={24} />
                             </div>
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-end-accent tracking-wider">Valor Gerado p/ Cliente</p>
                                 <p className="text-xl font-black text-white">R$ {(roiData?.total_creditos_identificados || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                <p className="text-[11px] text-end-text-sec italic">Calculado em créditos CBS/IBS identificados</p>
+                                <p className="text-[11px] text-end-text-sec italic">
+                                    {(roiData?.total_creditos_identificados || 0) > 0
+                                        ? "Créditos Identificados (Monofásicos)"
+                                        : "100% Auditado - Sem créditos pendentes"}
+                                </p>
                             </div>
                         </div>
                         <span className="bg-end-accent/20 text-end-accent text-[9px] px-2 py-0.5 rounded font-black border border-end-accent/30 lowercase">pro</span>
@@ -201,13 +215,24 @@ export function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-end-card border border-end-border p-5 rounded-lg border-l-4 border-l-blue-500 shadow-lg shadow-blue-500/5">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-end-text-sec text-sm font-medium uppercase tracking-wider">Recuperação Tributária</span>
+                        <span className="text-end-text-sec text-sm font-medium uppercase tracking-wider">Créditos de Impostos</span>
                         <TrendingUp className="text-blue-500" size={20} />
                     </div>
                     <div className="text-2xl font-black text-white">
                         R$ {stats.credito_tributario_potencial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
-                    <div className="text-[10px] text-blue-400 mt-1 font-bold uppercase">Auditoria Monofásica Ativa</div>
+                    <div className="text-[10px] text-blue-400 mt-1 font-bold">Análise Monofásica IA</div>
+                </div>
+
+                <div className="bg-end-card border border-end-border p-5 rounded-lg border-l-4 border-l-end-accent shadow-lg shadow-end-accent/5">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-end-text-sec text-sm font-medium uppercase tracking-wider">Volume Total Monitorado</span>
+                        <ShieldCheck className="text-end-accent" size={20} />
+                    </div>
+                    <div className="text-2xl font-black text-white">
+                        R$ {stats.valor_bens_servicos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-[10px] text-end-accent mt-1 font-bold">Valor Total das Notas Auditadas</div>
                 </div>
 
                 <div className="bg-end-card border border-end-border p-5 rounded-lg">
@@ -253,8 +278,15 @@ export function Dashboard() {
                 )}>
                     <h3 className="text-lg font-semibold text-white mb-6 w-full text-center">Índice de Exposição Fiscal</h3>
                     <RiskThermometer score={stats.risco_score} size={280} />
-                    <p className="text-sm text-end-text-sec mt-6 text-center max-w-sm">
-                        Calculado com base na auditoria de 100% dos XMLs via motor de regras inteligente.
+                    <p className="text-sm font-bold text-white mt-6 text-center max-w-sm flex items-center gap-2">
+                        {stats.risco_score <= 5 ? (
+                            <>
+                                <ShieldCheck size={18} className="text-end-success" />
+                                <span className="text-end-success italic">Escudo Fiscal Ativo: Operação 100% Segura</span>
+                            </>
+                        ) : (
+                            "Cálculo de Auditoria Inteligente (100% dos XMLs)."
+                        )}
                     </p>
                 </div>
 

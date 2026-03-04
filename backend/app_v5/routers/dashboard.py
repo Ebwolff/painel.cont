@@ -132,6 +132,16 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
             
             risco_score = int(min(frequencia_score + impacto_score, 100))
                 
+            # 3. Fetching última sincronização do certificado
+            ultima_sync = None
+            cert_res = admin_client.table("certificados_a1").select("ultimo_sync").eq("tenant_id", tenant_id)
+            if role == 'monitor' and empresa_id:
+                cert_res = cert_res.eq("empresa_id", empresa_id)
+            
+            cert_data = cert_res.maybe_single().execute().data
+            if cert_data:
+                ultima_sync = cert_data.get('ultimo_sync')
+
             result = {
                 "empresa_id": empresa_id if role == 'monitor' else tenant_id, 
                 "risco_score": risco_score,
@@ -141,6 +151,7 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
                 "notas_com_erro": notas_com_erro,
                 "valor_bens_servicos": round(valor_total_soma, 2),
                 "credito_tributario_potencial": round(total_creditos, 2),
+                "ultima_sincronizacao": ultima_sync,
                 "status": "seguro" if risco_score <= 15 else "atencao" if risco_score <= 40 else "critico"
             }
 

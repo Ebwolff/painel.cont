@@ -138,6 +138,11 @@ export function RelatorioValor() {
                         <p className="text-3xl font-black text-end-warning">
                             {glosaFormatada}
                         </p>
+                        {stats.notas_com_erro === 0 && (
+                            <span className="text-[10px] text-end-success font-bold uppercase flex items-center gap-1">
+                                <ShieldCheck size={12} /> Seguro
+                            </span>
+                        )}
                     </div>
                 </div>
                 <div className="bg-end-card border border-end-border rounded-xl p-5 print:border-gray-200">
@@ -163,8 +168,13 @@ export function RelatorioValor() {
             <div className="grid grid-cols-1 lg:grid-cols-3 print:grid-cols-1 gap-6">
                 {/* Total Impact Card */}
                 <div className="lg:col-span-2 bg-gradient-to-br from-end-card to-end-bg border border-end-border rounded-xl p-8 relative overflow-hidden print:bg-white print:border-gray-300 print:from-white print:to-white">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 print:opacity-5">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 print:opacity-5 flex flex-col items-center">
                         <TrendingUp size={120} className="text-end-accent" />
+                        {roiData?.total_creditos_identificados === 0 && (
+                            <div className="mt-4 p-4 border-2 border-end-success rounded-full rotate-12 flex items-center justify-center">
+                                <ShieldCheck size={48} className="text-end-success" />
+                            </div>
+                        )}
                     </div>
 
                     <div className="relative z-10">
@@ -173,7 +183,9 @@ export function RelatorioValor() {
                             {totalFormatado}
                         </p>
                         <p className="text-end-text-sec print:text-gray-600 mt-4 max-w-md">
-                            Este montante representa o impacto financeiro direto da auditoria automatizada: créditos identificados e multas evitadas.
+                            {roiData?.total_creditos_identificados > 0
+                                ? "Este montante representa o impacto financeiro direto da auditoria automatizada: créditos identificados e multas evitadas."
+                                : "A auditoria automatizada de 100% dos documentos fiscais confirmou a conformidade total da sua operação. Este é o selo de segurança da sua empresa."}
                         </p>
 
                         <div className="flex flex-wrap gap-4 mt-8">
