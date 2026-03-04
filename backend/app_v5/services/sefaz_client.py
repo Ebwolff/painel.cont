@@ -51,16 +51,14 @@ class SefazClient:
         except Exception as e:
             raise ValueError(f"Certificado inválido ou senha incorreta: {e}")
 
-    def build_soap_envelope(self, cnpj: str, ultimo_nsu: str = "000000000000000") -> str:
+    def build_soap_envelope(self, cnpj: str, ultimo_nsu: str = "000000000000000", codigo_uf: str = "35") -> str:
         """
-        Monta o envelope SOAP para nfeDistDFeInteresse.
+        Monta o envelope SOAP 1.2 para nfeDistDFeInteresse.
         ultimo_nsu: NSU de referência, a SEFAZ retornará documentos com NSU maior.
+        codigo_uf: Código IBGE do estado do autor (ex: 35=SP, 33=RJ, 31=MG).
         """
         # Remove formatação do CNPJ
         cnpj_limpo = cnpj.replace(".", "").replace("/", "").replace("-", "")
-
-        # cUF 35 = São Paulo (padrão; a SEFAZ distribui para todos os estados)
-        codigo_uf = os.getenv("SEFAZ_UF", "35")
 
         envelope = f"""<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -86,18 +84,20 @@ class SefazClient:
         pfx_bytes: bytes,
         password: str,
         cnpj: str,
-        ultimo_nsu: str = "000000000000000"
+        ultimo_nsu: str = "000000000000000",
+        codigo_uf: str = "35",
     ) -> list[dict]:
         """
         Chama o webservice SEFAZ com autenticação mTLS e retorna lista de documentos.
         Cada documento: {"chave_acesso": str, "xml_content": bytes, "nsu": str, "tipo": str}
         """
         cert_pem, key_pem = self.extract_pem_from_pfx(pfx_bytes, password)
-        soap_body = self.build_soap_envelope(cnpj, ultimo_nsu)
+        soap_body = self.build_soap_envelope(cnpj, ultimo_nsu, codigo_uf)
 
+        # SOAP 1.2: Content-Type DEVE ser application/soap+xml
+        # SOAPAction vai como parâmetro 'action' no Content-Type (não como header separado)
         headers = {
-            "Content-Type": "text/xml; charset=UTF-8",
-            "SOAPAction": SOAP_ACTION,
+            "Content-Type": f'application/soap+xml; charset=utf-8; action="{SOAP_ACTION}"',
         }
 
         # requests exige arquivos físicos para client cert — usamos tmpfiles em memória

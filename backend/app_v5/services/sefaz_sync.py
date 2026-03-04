@@ -59,7 +59,7 @@ class SefazSyncService:
         # 3. Buscar CNPJ da empresa
         emp_res = (
             admin_client.table("empresas")
-            .select("cnpj, razao_social")
+            .select("cnpj, razao_social, uf")
             .eq("id", empresa_id)
             .single()
             .execute()
@@ -69,11 +69,23 @@ class SefazSyncService:
 
         cnpj = emp_res.data["cnpj"]
         razao = emp_res.data.get("razao_social", "N/A")
+        
+        # Mapear sigla UF → código IBGE para o SEFAZ
+        UF_IBGE = {
+            "AC": "12", "AL": "27", "AP": "16", "AM": "13", "BA": "29",
+            "CE": "23", "DF": "53", "ES": "32", "GO": "52", "MA": "21",
+            "MT": "51", "MS": "50", "MG": "31", "PA": "15", "PB": "25",
+            "PR": "41", "PE": "26", "PI": "22", "RJ": "33", "RN": "24",
+            "RS": "43", "RO": "11", "RR": "14", "SC": "42", "SP": "35",
+            "SE": "28", "TO": "17",
+        }
+        uf_sigla = emp_res.data.get("uf", "SP")
+        codigo_uf = UF_IBGE.get(uf_sigla, "35")
 
         # 4. Chamar SEFAZ real
         try:
             sefaz = SefazClient(ambiente=ambiente)
-            documentos = sefaz.call_sefaz(pfx_bytes, senha, cnpj, ultimo_nsu)
+            documentos = sefaz.call_sefaz(pfx_bytes, senha, cnpj, ultimo_nsu, codigo_uf)
         except RuntimeError as e:
             # Atualizar status do certificado com o erro truncado para facilitar debug no banco
             error_msg = f"erro: {str(e)}"[:200]
