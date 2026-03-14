@@ -29,7 +29,17 @@ async function handleResponse(response: Response) {
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: response.statusText }));
-        throw new Error(error.detail || `API Error: ${response.status}`);
+        let errorMessage = `API Error: ${response.status}`;
+        if (error.detail) {
+            if (typeof error.detail === 'string') {
+                errorMessage = error.detail;
+            } else if (typeof error.detail === 'object' && error.detail.message) {
+                errorMessage = error.detail.message;
+            } else {
+                errorMessage = JSON.stringify(error.detail);
+            }
+        }
+        throw new Error(errorMessage);
     }
 
     return response.json();
@@ -96,7 +106,17 @@ export const api = {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: response.statusText }));
-            throw new Error(error.detail || 'Upload Error');
+            let errorMessage = 'Upload Error';
+            if (error.detail) {
+                if (typeof error.detail === 'string') {
+                    errorMessage = error.detail;
+                } else if (typeof error.detail === 'object' && error.detail.message) {
+                    errorMessage = error.detail.message;
+                } else {
+                    errorMessage = JSON.stringify(error.detail);
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         return response.json();

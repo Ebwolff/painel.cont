@@ -89,8 +89,8 @@ async def upload_xml(
         if "23505" in error_str or "duplicate key" in error_str:
             # Buscar nota existente para exibir ao usuário
             try:
-                chave = nfe_data.get("chave_acesso")
-                existing = client.table("notas_fiscais")\
+                chave = nfe_data_quick.get("chave_acesso")
+                existing = user_client.table("notas_fiscais")\
                     .select("*, alertas_conformidade(*)")\
                     .eq("chave_acesso", chave)\
                     .eq("tenant_id", tenant_id)\
