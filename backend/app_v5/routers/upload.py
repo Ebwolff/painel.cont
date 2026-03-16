@@ -69,15 +69,27 @@ async def upload_xml(
         # Convertemos para base64 para o broker
         xml_b64 = base64.b64encode(content).decode('utf-8')
         
-        task = process_nfe_xml_async.delay(xml_b64, tenant_id, empresa_id)
-        
-        logger.info(f"UPLOAD: Nota enfileirada (Job ID: {task.id}) para tenant {tenant_id}")
-
-        return {
-            "status": "enqueued",
-            "job_id": task.id,
-            "message": "Arquivo recebido. O processamento iniciou em segundo plano."
-        }
+        try:
+            task = process_nfe_xml_async.delay(xml_b64, tenant_id, empresa_id)
+            job_id = task.id
+            logger.info(f"UPLOAD: Nota enfileirada (Job ID: {task.id}) para tenant {tenant_id}")
+            return {
+                "status": "enqueued",
+                "job_id": job_id,
+                "message": "Arquivo recebido. O processamento iniciou em segundo plano."
+            }
+        except Exception as celery_err:
+            logger.warning(f"UPLOAD CELERY FAIL: {celery_err}. Executando processamento síncrono (Fallback).")
+            # Execução síncrona
+            res = process_nfe_xml_async(xml_b64, tenant_id, empresa_id)
+            if res.get("status") == "error":
+                raise Exception(f"Erro no processamento da nota: {res.get('message')}")
+            
+            return {
+                "status": "processed",
+                "job_id": f"sync-{res.get('nota_id')}",
+                "message": "Arquivo processado com sucesso (modo síncrono local)."
+            }
 
 
     except HTTPException:
