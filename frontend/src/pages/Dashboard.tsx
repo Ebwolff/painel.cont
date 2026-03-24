@@ -47,7 +47,7 @@ export function Dashboard() {
                 const [metricsData, roiDataRes, alertsDataRes, anomalyDataRes, assistedRes] = await Promise.all([
                     api.get('/dashboard/current-company').catch(e => ({ error: true, message: e.message })),
                     api.get('/roi/summary').catch(e => ({ error: true })),
-                    api.get('/alerts').catch(e => []),
+                    api.get('/alerts/').catch(e => []),
                     hasFeature('ai_anomaly_detection') ? api.get('/anomalies/detect').catch(e => ({ anomalies: [] })) : Promise.resolve({ anomalies: [] }),
                     api.get('/simulation/assisted-calculation').catch(e => null)
                 ]);
