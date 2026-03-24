@@ -176,7 +176,7 @@ export function Dashboard() {
                 )}
 
                 {/* Assisted Calculation Preview */}
-                {assistedData && (
+                {assistedData?.consolidado && (
                     <div className="bg-white/5 border border-white/10 rounded-lg p-4 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className="h-12 w-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
@@ -185,14 +185,14 @@ export function Dashboard() {
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-end-text-sec tracking-wider">Apuração Assistida (Pré-Guia)</p>
                                 <p className="text-xl font-black text-white">
-                                    {(assistedData.consolidado.total_tributos || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    {(assistedData.consolidado?.total_tributos || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </p>
                                 <p className="text-[11px] text-end-text-sec italic">Baseado em notas validadas este mês</p>
                             </div>
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] text-end-text-sec uppercase mb-1">Alíquota Efetiva</p>
-                            <p className="text-sm font-bold text-end-accent">{assistedData.aliquota_efetiva}%</p>
+                            <p className="text-sm font-bold text-end-accent">{assistedData?.aliquota_efetiva || 0}%</p>
                         </div>
                     </div>
                 )}
