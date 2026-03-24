@@ -294,7 +294,7 @@ export function RelatorioValor() {
             </div>
 
             {/* Tax Reform Simulator Section */}
-            {hasFeature('tax_reform_simulator') && simulation && (
+            {hasFeature('tax_reform_simulator') && simulation?.cenarios && (
                 <div className="bg-end-card border border-end-border rounded-xl p-8 print:border-gray-300">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 print:hidden">
                         <div className="flex-1">
@@ -315,7 +315,7 @@ export function RelatorioValor() {
                                     ><Table size={14} /> Comparativo</button>
                                 </div>
                             </div>
-                            <p className="text-end-text-sec text-xs mb-4">Projeção baseada no faturamento real dos últimos {simulation.periodo_dias} dias.</p>
+                            <p className="text-end-text-sec text-xs mb-4">Projeção baseada no faturamento real dos últimos {simulation?.periodo_dias || 30} dias.</p>
 
                             {/* Interactivity Controls */}
                             <div className="bg-white/5 p-4 rounded-lg border border-white/10 max-w-sm">
@@ -344,7 +344,7 @@ export function RelatorioValor() {
                         <div className="bg-end-success/10 border border-end-success/20 rounded-lg p-3">
                             <p className="text-[10px] font-bold text-end-success uppercase mb-1">Economia em 2028</p>
                             <p className="text-xl font-black text-end-success tracking-tighter">
-                                + {simulation.economia_transicao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                + {(simulation?.economia_transicao || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </p>
                         </div>
                     </div>
@@ -504,15 +504,15 @@ export function RelatorioValor() {
                     )}
 
                     {/* Volume de Operações */}
-                    {simulation.total_saidas > 0 && (
+                    {(simulation?.total_saidas || 0) > 0 && (
                         <div className="mt-6 grid grid-cols-2 gap-4">
                             <div className="bg-white/[0.02] rounded-lg p-4 border border-white/5">
                                 <p className="text-[10px] font-bold text-end-text-sec uppercase mb-1">Volume de Vendas (Saídas)</p>
-                                <p className="text-lg font-black text-white">{simulation.total_saidas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                <p className="text-lg font-black text-white">{(simulation?.total_saidas || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                             </div>
                             <div className="bg-white/[0.02] rounded-lg p-4 border border-white/5">
                                 <p className="text-[10px] font-bold text-end-text-sec uppercase mb-1">Volume de Compras (Entradas)</p>
-                                <p className="text-lg font-black text-white">{simulation.total_entradas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                <p className="text-lg font-black text-white">{(simulation?.total_entradas || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                             </div>
                         </div>
                     )}
@@ -521,10 +521,10 @@ export function RelatorioValor() {
                         <AlertCircle size={24} className="text-end-accent shrink-0" />
                         <p className="text-xs text-end-text-sec">
                             <strong className="text-end-accent">Análise Estratégica:</strong>{' '}
-                            {simulation.impacto_full < 0 ? (
-                                <>A reforma tributária projeta uma <span className="text-end-success font-bold">redução</span> de <span className="text-white font-bold">{Math.abs(simulation.impacto_full).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> na carga tributária. Os créditos de compras compensam significativamente o IVA sobre vendas.</>
+                            {(simulation?.impacto_full || 0) < 0 ? (
+                                <>A reforma tributária projeta uma <span className="text-end-success font-bold">redução</span> de <span className="text-white font-bold">{Math.abs(simulation?.impacto_full || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> na carga tributária. Os créditos de compras compensam significativamente o IVA sobre vendas.</>
                             ) : (
-                                <>Mesmo com os créditos de compra, a projeção indica um aumento de <span className="text-white font-bold">{simulation.impacto_full.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>. É vital maximizar o aproveitamento de créditos.</>
+                                <>Mesmo com os créditos de compra, a projeção indica um aumento de <span className="text-white font-bold">{(simulation?.impacto_full || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>. É vital maximizar o aproveitamento de créditos.</>
                             )}
                         </p>
                     </div>
