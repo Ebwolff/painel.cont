@@ -10,35 +10,6 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/.env
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-    networks:
-      - end_network
-
-  # Worker para processamento de XML
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A app_v5.worker worker --loglevel=info
-    env_file:
-      - ./backend/.env
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-    networks:
-      - end_network
-
-  # Redis para Filas e Cache
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
     networks:
       - end_network
 
@@ -46,5 +17,3 @@ networks:
   end_network:
     driver: bridge
 
-volumes:
-  redis_data:

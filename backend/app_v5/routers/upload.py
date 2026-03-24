@@ -4,7 +4,7 @@ from app_v5.services.xml_parser import XMLParserService
 from app_v5.services.tax_validator import TaxValidatorService
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token
-from app_v5.worker import process_nfe_xml_async
+from app_v5.worker import process_nfe_xml_sync
 import base64
 import logging
 
@@ -65,31 +65,18 @@ async def upload_xml(
                 "message": "Esta nota já foi enviada anteriormente."
             }
 
-        # 2. Enviar para Fila Assíncrona (Celery)
-        # Convertemos para base64 para o broker
+        # Processamento síncrono direto
         xml_b64 = base64.b64encode(content).decode('utf-8')
-        
-        try:
-            task = process_nfe_xml_async.delay(xml_b64, tenant_id, empresa_id)
-            job_id = task.id
-            logger.info(f"UPLOAD: Nota enfileirada (Job ID: {task.id}) para tenant {tenant_id}")
-            return {
-                "status": "enqueued",
-                "job_id": job_id,
-                "message": "Arquivo recebido. O processamento iniciou em segundo plano."
-            }
-        except Exception as celery_err:
-            logger.warning(f"UPLOAD CELERY FAIL: {celery_err}. Executando processamento síncrono (Fallback).")
-            # Execução síncrona
-            res = process_nfe_xml_async(xml_b64, tenant_id, empresa_id)
-            if res.get("status") == "error":
-                raise Exception(f"Erro no processamento da nota: {res.get('message')}")
-            
-            return {
-                "status": "processed",
-                "job_id": f"sync-{res.get('nota_id')}",
-                "message": "Arquivo processado com sucesso (modo síncrono local)."
-            }
+        res = process_nfe_xml_sync(xml_b64, tenant_id, empresa_id)
+        if res.get("status") == "error":
+            raise Exception(f"Erro no processamento da nota: {res.get('message')}")
+
+        return {
+            "status": "processed",
+            "job_id": f"sync-{res.get('nota_id')}",
+            "nota_id": res.get("nota_id"),
+            "message": "Arquivo processado com sucesso."
+        }
 
 
     except HTTPException:

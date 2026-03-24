@@ -13,17 +13,15 @@ sync_service = SefazSyncService()
 supabase_service = SupabaseService()
 
 
-@router.post("/trigger/{empresa_id}", summary="Dispara busca na SEFAZ (via Celery)")
+@router.post("/trigger/{empresa_id}", summary="Dispara busca na SEFAZ")
 async def trigger_sync(
     empresa_id: str,
     token: str = Depends(get_current_token),
-    use_worker: bool = Query(True, description="Se True, usa Celery. Se False, usa BackgroundTasks."),
     background_tasks: BackgroundTasks = None,
 ):
     """
     Aciona a sincronização de documentos para uma empresa específica.
-    Modo padrão: Celery worker com rastreamento via sync_jobs.
-    Fallback: BackgroundTasks do FastAPI (sem rastreamento).
+    Usa BackgroundTasks do FastAPI para execução assíncrona.
     """
     try:
         client = supabase_service.get_client_for_user(token)
@@ -35,24 +33,14 @@ async def trigger_sync(
         if not tenant_id:
             raise HTTPException(status_code=403, detail="Escritório não identificado para este usuário.")
 
-        if use_worker:
-            # Celery: job rastreado via sync_jobs (agora feito dentro do service chamado pelo worker)
-            try:
-                from app_v5.worker import sefaz_sync_task
-                task = sefaz_sync_task.delay(empresa_id, tenant_id, "manual")
-                return {
-                    "message": "Sincronização agendada via worker.",
-                    "task_id": task.id,
-                    "mode": "celery",
-                }
-            except Exception as e:
-                logger.warning(f"SEFAZ: Celery indisponível, usando fallback: {e}")
-                # Fallback para BackgroundTasks — agora passamos triggered_by para o service registrar o job
-                background_tasks.add_task(sync_service.sync_company_documents, empresa_id, tenant_id, triggered_by="background_fallback")
-                return {"message": "Sincronização iniciada em segundo plano (fallback).", "mode": "background"}
-        else:
-            background_tasks.add_task(sync_service.sync_company_documents, empresa_id, tenant_id, triggered_by="manual_background")
-            return {"message": "Sincronização iniciada em segundo plano.", "mode": "background"}
+        background_tasks.add_task(
+            sync_service.sync_company_documents,
+            empresa_id, tenant_id, triggered_by="manual"
+        )
+        return {
+            "message": "Sincronização iniciada em segundo plano.",
+            "mode": "background",
+        }
 
     except HTTPException:
         raise
