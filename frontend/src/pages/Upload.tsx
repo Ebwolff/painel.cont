@@ -23,7 +23,7 @@ export function Upload() {
         async function fetchCompanies() {
             try {
                 const data = await api.get('/companies/');
-                setCompanies(data);
+                setCompanies(Array.isArray(data) ? data : []);
                 if (data.length > 0) setSelectedCompany(data[0].id);
             } catch (err) {
                 console.error("Failed to fetch companies", err);

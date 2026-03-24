@@ -26,7 +26,7 @@ export function RelatorioValor() {
             try {
                 // 1. Fetch Companies for filter
                 const compData = await api.get('/companies/');
-                setCompanies(compData);
+                setCompanies(Array.isArray(compData) ? compData : []);
 
                 await fetchData();
             } catch (error) {

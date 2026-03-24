@@ -56,7 +56,7 @@ export function Empresas() {
         setLoading(true);
         try {
             const data = await api.get('/companies/');
-            setCompanies(data);
+            setCompanies(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Failed to fetch companies", error);
         } finally {
