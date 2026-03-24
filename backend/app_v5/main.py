@@ -30,6 +30,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS Configuration
+allowed_origins = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,https://painel-cont.vercel.app"
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Rate Limiting Configuration
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
