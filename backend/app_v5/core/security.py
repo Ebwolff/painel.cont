@@ -2,17 +2,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from fastapi.concurrency import run_in_threadpool
-import redis
 import json
 import hashlib
 import os
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Redis Connection for Auth Cache
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-r_auth = redis.Redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
 
 
 # Define HTTPBearer scheme

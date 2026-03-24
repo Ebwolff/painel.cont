@@ -1,6 +1,5 @@
 from typing import Dict, Any, List, Optional
 import logging
-import redis
 import json
 import os
 
@@ -20,58 +19,27 @@ class RuleEngineService:
         self.supabase = SupabaseService()
         self._rules_cache: List[Dict] = []
         self._cache_loaded = False
-        
-        # Redis Connection with short timeouts for local fallback
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-        self.redis = redis.Redis.from_url(
-            redis_url, 
-            decode_responses=True,
-            socket_connect_timeout=1,
-            socket_timeout=1
-        )
-        self.cache_key = "rules_matrix_active"
 
 
     def _load_rules(self):
-        """Carrega regras do Redis ou do Banco."""
+        """Carrega regras do cache em memória ou do Banco."""
         if self._cache_loaded and self._rules_cache:
             return
 
         try:
-            # 1. Tentar ler do Redis
-            try:
-                cached = self.redis.get(self.cache_key)
-                if cached:
-                    self._rules_cache = json.loads(cached)
-                    self._cache_loaded = True
-                    logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via Redis.")
-                    return
-            except Exception as redis_err:
-                logger.warning(f"RuleEngine Cache: Redis inacessível. {redis_err}")
-
-            # 2. Se não houver, carregar do Supabase
+            # Carregar do Supabase
             client = self.supabase.get_service_client()
             res = client.table("fiscal_rules").select("*").eq("active", True).execute()
             self._rules_cache = res.data or []
             
-            # 3. Cache no Redis por 1 hora (Falha Silenciosa)
-            try:
-                self.redis.setex(self.cache_key, 3600, json.dumps(self._rules_cache))
-            except:
-                pass
-            
             self._cache_loaded = True
-            logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via DB e cacheadas no Redis.")
+            logger.info(f"RuleEngine: {len(self._rules_cache)} regras carregadas via DB.")
         except Exception as e:
             logger.error(f"RuleEngine: Falha ao carregar regras: {e}")
             self._rules_cache = []
 
     def invalidate_cache(self):
-        """Força recarga global das regras limpando o Redis."""
-        try:
-            self.redis.delete(self.cache_key)
-        except:
-            pass
+        """Força recarga das regras."""
         self._cache_loaded = False
         self._rules_cache = []
 

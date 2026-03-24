@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from app_v5.core.supabase_client import SupabaseService
 from app_v5.core.security import get_current_token, get_current_user
-import redis
 import json
 import os
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 supabase_service = SupabaseService()
 
-# Redis Configuration for caching
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-r = redis.Redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
+# In-memory cache (substitui Redis)
+_dashboard_cache: dict = {}
+_cache_ttl = 300  # 5 minutos
 
 @router.get("/current-company", summary="Métricas para o Termômetro de Risco")
 def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_user)):
@@ -44,14 +44,11 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
         
         logger.info(f"DASHBOARD: User={user_id}, Tenant={tenant_id}, Role={role}")
 
-        # 3. Verificar Cache Redis (Falha Silenciosa)
-        try:
-            cached_data = r.get(cache_key)
-            if cached_data:
-                logger.info(f"DASHBOARD: Retornando dados via Cache Redis para {tenant_id}")
-                return json.loads(cached_data)
-        except Exception as redis_err:
-            logger.warning(f"DASHBOARD CACHE: Redis indisponível. {redis_err}")
+        # 3. Verificar Cache em Memória
+        cached_entry = _dashboard_cache.get(cache_key)
+        if cached_entry and (time.time() - cached_entry['ts']) < _cache_ttl:
+            logger.info(f"DASHBOARD: Retornando dados via Cache para {tenant_id}")
+            return cached_entry['data']
         
         # Preparar Query Base (Últimos 30 dias)
         from datetime import datetime, timedelta
@@ -155,11 +152,8 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
                 "status": "seguro" if risco_score <= 15 else "atencao" if risco_score <= 40 else "critico"
             }
 
-            # 4. Salvar no Cache (TTL 5 minutos)
-            try:
-                r.setex(cache_key, 300, json.dumps(result))
-            except Exception as cache_error:
-                logger.warning(f"DASHBOARD: Falha ao salvar no cache Redis: {cache_error}")
+            # 4. Salvar no Cache em Memória (TTL 5 minutos)
+            _dashboard_cache[cache_key] = {'data': result, 'ts': time.time()}
 
             return result
 
