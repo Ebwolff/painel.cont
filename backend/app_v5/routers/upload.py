@@ -102,7 +102,7 @@ async def upload_xml(
                         return {
                             "file": file.filename,
                             "already_exists": True,
-                            "parsed_data": nfe_data,
+                            "parsed_data": nfe_data_quick,
                             "validation": {
                                 "status": nota["status"],
                                 "validation_details": {
