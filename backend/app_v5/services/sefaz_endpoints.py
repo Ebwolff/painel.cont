@@ -55,7 +55,7 @@ RECEPCAO_EVENTO_PROPRIO = {
     "producao": {
         "AM": "https://nfe.sefaz.am.gov.br/services2/services/RecepcaoEvento4",
         "BA": "https://nfe.sefaz.ba.gov.br/webservices/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
-        "GO": "https://nfe.sefaz.go.gov.br/nfe/services/RecepcaoEvento4",
+        "GO": "https://nfe.sefaz.go.gov.br/nfe/services/NFeRecepcaoEvento4",
         "MG": "https://nfe.sefaz.mg.gov.br/nfe/services/NFeRecepcaoEvento4",
         "MS": "https://nfe.sefaz.ms.gov.br/ws/NFeRecepcaoEvento4",
         "MT": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NFeRecepcaoEvento4",

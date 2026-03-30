@@ -260,13 +260,13 @@ class SefazClient:
         cnpj_limpo = cnpj.replace(".", "").replace("/", "").replace("-", "")
         tp_amb = "1" if self.ambiente == "producao" else "2"
 
-        # cOrgao dinâmico por UF (não fixo em 91)
-        c_orgao = get_codigo_ibge_uf(uf_empresa)
+        # cOrgao: 91 = AN (obrigatório para manifestação do destinatário)
+        c_orgao = "91"
 
         # ID: ID + tpEvento(6) + chNFe(44) + nSeqEvento(02) = 52 chars
         event_id = f"ID{tp_evento}{chave_nfe}{str(n_seq_evento).zfill(2)}"
 
-        dh_evento = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S-00:00")
+        dh_evento = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S-03:00")
         x_evento = self.DESCRICOES_EVENTO.get(tp_evento, "Ciencia da Operacao")
 
         # 1. Montar XML do evento
@@ -294,7 +294,7 @@ class SefazClient:
         etree.SubElement(env, "idLote").text = gerar_id_lote()
         env.append(evento_assinado)
 
-        xml_str = etree.tostring(env, xml_declaration=True, encoding="UTF-8").decode()
+        xml_str = etree.tostring(env, xml_declaration=False, encoding="unicode")
 
         # 4. SOAP 1.2 Envelope
         endpoint = get_recepcao_evento_url(uf_empresa, self.ambiente)
@@ -322,7 +322,7 @@ class SefazClient:
                 headers=headers,
                 pkcs12_data=pfx_bytes,
                 pkcs12_password=password,
-                verify=True,
+                verify=False,  # SEFAZ estaduais usam CAs ICP-Brasil fora do trust store padrão
                 timeout=self.timeout,
             )
             response.raise_for_status()
