@@ -39,7 +39,13 @@ export class NotaFiscal {
   emitente_nome: string;
 
   @Column({ nullable: true })
+  emitente_cnpj: string;
+
+  @Column({ nullable: true })
   destinatario_nome: string;
+
+  @Column({ nullable: true })
+  destinatario_cnpj: string;
 
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   valor_total: number;

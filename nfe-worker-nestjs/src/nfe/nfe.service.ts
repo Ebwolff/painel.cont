@@ -92,7 +92,9 @@ export class NfeService {
         xml_url: s3Url || existing?.xml_url,
         direcao: isEmitida ? DirecaoNota.EMITIDA : DirecaoNota.RECEBIDA,
         emitente_nome: doc.tipoDoc === 'resNFe' ? parsed.resNFe.xNome : parsed.nfeProc.NFe.infNFe.emit.xNome,
+        emitente_cnpj: emitenteCnpj,
         destinatario_nome: doc.tipoDoc === 'resNFe' ? undefined : parsed.nfeProc.NFe.infNFe.dest.xNome,
+        destinatario_cnpj: doc.tipoDoc === 'resNFe' ? undefined : (parsed.nfeProc.NFe.infNFe.dest.CNPJ || parsed.nfeProc.NFe.infNFe.dest.CPF),
         valor_total: doc.tipoDoc === 'resNFe' ? parseFloat(parsed.resNFe.vNF) : parseFloat(parsed.nfeProc.NFe.infNFe.total.ICMSTot.vNF),
         data_emissao: doc.tipoDoc === 'resNFe' ? new Date(parsed.resNFe.dhEmi) : new Date(parsed.nfeProc.NFe.infNFe.ide.dhEmi),
         processing: false // Release Lock
