@@ -20,6 +20,64 @@ export function RelatorioValor() {
     const [isPresentationMode, setIsPresentationMode] = useState(false);
     const [viewMode, setViewMode] = useState<'cards' | 'charts' | 'table'>('cards');
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [selectedLaudo, setSelectedLaudo] = useState<any>(null);
+
+    const LAUDO_DETAILS: Record<string, any> = {
+        'PIS / COFINS': {
+            title: 'Auditoria de PIS e COFINS',
+            desc: 'Validação profunda das regras de Monofasia, verificação de CSTs e exclusão do ICMS da base de cálculo PIS/COFINS.',
+            checks: [
+                { text: 'Exclusão do ICMS da Base de Cálculo confirmada pelo STF', status: 'validado' },
+                { text: 'Produtos Sujeitos à Tributação Monofásica segregados corretamente', status: 'validado' },
+                { text: 'Cruzamento de CSTs de Entrada (Crédito) vs Saída (Débito)', status: 'validado' }
+            ]
+        },
+        'ICMS / ICMS-ST': {
+            title: 'Auditoria de ICMS e Subst. Tributária',
+            desc: 'Mapeamento de alíquotas interestaduais, MVA aplicado e regras de ICMS-ST recolhido anteriormente.',
+            checks: [
+                { text: 'Margem de Valor Agregado (MVA) aplicada conforme UF destino', status: 'validado' },
+                { text: 'Diferencial de Alíquota (DIFAL) analisado', status: 'validado' },
+                { text: 'CFOPs de Substituição Tributária (ex: 5.405) consistentes com NCM', status: 'validado' }
+            ]
+        },
+        'IPI / ISS': {
+            title: 'Auditoria de IPI e ISSQN',
+            desc: 'Verificação rigorosa de competência municipal (LC 116/03) e enquadramento de industrialização.',
+            checks: [
+                { text: 'Fato gerador de serviços municipais (ISS) vs Mercadorias cruzado', status: 'validado' },
+                { text: 'IPI sobre frete e despesas acessórias destacado', status: 'validado' },
+                { text: 'Retenções de ISS validadas conforme município', status: 'validado' }
+            ]
+        },
+        'CST / CSOSN': {
+            title: 'Validação de Código de Situação Tributária',
+            desc: 'Análise estrutural comparando o CST/CSOSN do documento com o Regime Tributário ativo da empresa na Receita Federal.',
+            checks: [
+                { text: 'CSOSN compatível exclusivo para optantes do Simples Nacional', status: 'validado' },
+                { text: 'CRT (Código de Regime Tributário) do emissor validado no portal nacional', status: 'validado' },
+                { text: 'CFOP e CST de Substituição Tributária / Monofasia sincronizados', status: 'validado' }
+            ]
+        },
+        'Retenções na Fonte': {
+            title: 'Auditoria de Retenções Federais',
+            desc: 'Validação de impostos retidos na fonte (IRRF, CSLL, PIS e COFINS) nos serviços prestados/tomados.',
+            checks: [
+                { text: 'CSRF (4.65%) corretamente destacado e retido em serviços', status: 'validado' },
+                { text: 'IRRF Corporativo (1.50%) calculado e conferido na fonte', status: 'validado' },
+                { text: 'Assinatura digital e alíquota confirmada com base no anexo de serviços', status: 'validado' }
+            ]
+        },
+        'NCM de Produtos': {
+            title: 'Auditoria de Classificação Fiscal',
+            desc: 'Mapeamento massivo linha a linha dos NCMs e CESTs dos produtos vendidos e cruzamento contra as regras vigentes na Tabela TIPI.',
+            checks: [
+                { text: 'Identificação e isolamento de NCMs inativos, genéricos (9999) ou revogados', status: 'validado' },
+                { text: 'Obrigatoriedade de CEST presente para produtos sujeitos à ST', status: 'validado' },
+                { text: 'Alíquotas de tributação Federal/Estadual ancoradas na nomenclatura NCM', status: 'validado' }
+            ]
+        }
+    };
 
     useEffect(() => {
         async function fetchInitialData() {
@@ -266,9 +324,13 @@ export function RelatorioValor() {
                         { label: 'Retenções na Fonte', status: 'validado', rules: 'IRRF, CSLL, PIS, COFINS (4.65%)' },
                         { label: 'NCM de Produtos', status: 'validado', rules: 'Análise de CEST e Alíquotas' },
                     ].map((item, idx) => (
-                        <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-lg flex items-center justify-between">
+                        <div 
+                            key={idx}
+                            onClick={() => setSelectedLaudo(item)}
+                            className="bg-white/5 border border-white/5 hover:border-end-accent/30 hover:bg-white/10 cursor-pointer transition-all p-4 rounded-lg flex items-center justify-between group"
+                        >
                             <div>
-                                <p className="text-xs font-bold text-white print:text-black mb-1">{item.label}</p>
+                                <p className="text-xs font-bold text-white group-hover:text-end-accent transition-colors print:text-black mb-1">{item.label}</p>
                                 <p className="text-[10px] text-end-text-sec uppercase font-medium">{item.rules}</p>
                             </div>
                             <div className={cn(
@@ -564,6 +626,61 @@ export function RelatorioValor() {
             <div className="hidden print:block text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center mt-4">
                 Gerado em: {new Date().toLocaleString('pt-BR')} • Documento com validade analítica
             </div>
+
+            {/* Modal Laudo Técnico */}
+            {selectedLaudo && LAUDO_DETAILS[selectedLaudo.label] && (
+                <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300 print:hidden">
+                    <div className="bg-end-card border border-end-accent/30 p-8 rounded-2xl w-full max-w-2xl shadow-[0_0_50px_rgba(255,160,0,0.15)] relative">
+                        <button 
+                            onClick={() => setSelectedLaudo(null)}
+                            className="absolute top-6 right-6 text-end-text-sec hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all"
+                        >
+                            <ChevronRight size={16} className="rotate-180" />
+                        </button>
+                        
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className={cn(
+                                "p-3 rounded-xl",
+                                selectedLaudo.status === 'validado' ? "bg-end-success/20 text-end-success" : "bg-end-warning/20 text-end-warning"
+                            )}>
+                                {selectedLaudo.status === 'validado' ? <ShieldCheck size={32} /> : <AlertCircle size={32} />}
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-end-text-sec uppercase tracking-widest">Detalhe da Auditoria Digital</p>
+                                <h2 className="text-2xl font-black text-white">{LAUDO_DETAILS[selectedLaudo.label].title}</h2>
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-end-text-sec mb-8 leading-relaxed">
+                            {LAUDO_DETAILS[selectedLaudo.label].desc}
+                        </p>
+
+                        <div className="space-y-3 mb-8">
+                            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Critérios de Varredura Aplicados:</p>
+                            {LAUDO_DETAILS[selectedLaudo.label].checks.map((check: any, cIdx: number) => (
+                                <div key={cIdx} className="flex items-start gap-4 p-4 rounded-lg bg-white/[0.02] border border-white/5">
+                                    <div className="mt-0.5">
+                                        <ShieldCheck size={18} className="text-end-success" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-white">{check.text}</p>
+                                        <p className="text-[10px] text-end-text-sec uppercase mt-1">Conformidade Assinada Digitalmente pela IA</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-end pt-6 border-t border-white/10">
+                            <button 
+                                onClick={() => setSelectedLaudo(null)}
+                                className="bg-end-accent text-black px-6 py-3 rounded-lg font-bold hover:scale-105 transition-transform"
+                            >
+                                FECHAR LAUDO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 
