@@ -157,7 +157,7 @@ export function MonitorFiscal() {
             </div>
 
             {/* RPA Trigger (Somente Emitidas) */}
-            {filters.direcao === 'saida' && filters.empresa_id && (
+            {filters.direcao === 'saida' && (
                 <div className="bg-end-card border border-end-accent/30 p-4 rounded-xl flex flex-col md:flex-row items-center gap-4 animate-fade-in shadow-[0_0_15px_rgba(255,255,255,0.05)]">
                     <div className="flex-1">
                         <h3 className="text-sm font-bold text-white flex items-center gap-2"><ArrowUpRight size={16} className="text-end-accent" /> Extração RPA (Robô SEFAZ)</h3>
@@ -169,15 +169,16 @@ export function MonitorFiscal() {
                         <input
                             type="text"
                             maxLength={44}
-                            placeholder="Chave de Acesso (44 dígitos)"
+                            placeholder={filters.empresa_id ? "Chave de Acesso (44 dígitos)" : "Selecione a empresa acima"}
                             value={chaveRpa}
+                            disabled={!filters.empresa_id}
                             onChange={e => setChaveRpa(e.target.value.replace(/\D/g, ''))}
-                            className="bg-white/5 border border-white/10 text-white text-xs py-2 px-3 rounded focus:outline-none focus:border-end-accent w-full md:w-64 font-mono"
+                            className="bg-white/5 border border-white/10 text-white text-xs py-2 px-3 rounded focus:outline-none focus:border-end-accent w-full md:w-64 font-mono disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <button
                             onClick={handleTriggerRpa}
-                            disabled={rpaLoading || chaveRpa.length !== 44}
-                            className="bg-end-accent text-black px-4 py-2 rounded text-xs font-bold whitespace-nowrap disabled:opacity-50 hover:bg-end-accent/90 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
+                            disabled={rpaLoading || chaveRpa.length !== 44 || !filters.empresa_id}
+                            className="bg-end-accent text-black px-4 py-2 rounded text-xs font-bold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed hover:bg-end-accent/90 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
                         >
                             {rpaLoading ? <span className="animate-spin">↻</span> : <CheckCircle2 size={14} />}
                             {rpaLoading ? 'Enviando...' : 'Iniciar Extração'}
