@@ -1,14 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Empresa } from './empresa.entity';
 
 export enum StatusManifestacao {
   PENDENTE = 'pendente',
   AGUARDANDO_XML = 'aguardando_xml',
   COMPLETO = 'completo',
-  ERRO = 'erro'
+  ERRO = 'erro',
+  NAO_ENCONTRADA = 'nao_encontrada'
+}
+
+export enum TipoNota {
+  EMITIDA = 'emitida',
+  RECEBIDA = 'recebida'
 }
 
 @Entity('notas_fiscais')
+@Index(['empresa_id', 'chave'], { unique: true }) // Constraint forte p/ concorrência
 export class NotaFiscal {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -19,8 +26,11 @@ export class NotaFiscal {
   @Column({ unique: true })
   chave: string;
 
-  @Column()
+  @Column({ nullable: true })
   nsu: string;
+
+  @Column({ type: 'enum', enum: TipoNota, default: TipoNota.RECEBIDA })
+  tipo: TipoNota;
 
   @Column({ nullable: true })
   xml_url: string;
@@ -42,6 +52,10 @@ export class NotaFiscal {
 
   @Column({ type: 'enum', enum: StatusManifestacao, default: StatusManifestacao.PENDENTE })
   status_manifestacao: StatusManifestacao;
+
+  // Lock Lógico (Idempotência e Prevenção de Race Conditions)
+  @Column({ type: 'boolean', default: false })
+  processing: boolean;
 
   @ManyToOne(() => Empresa)
   @JoinColumn({ name: 'empresa_id' })

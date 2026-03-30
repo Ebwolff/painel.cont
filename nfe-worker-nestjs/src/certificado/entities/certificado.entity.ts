@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Empresa } from './empresa.entity';
+import { Empresa } from '../../nfe/entities/empresa.entity';
 
 @Entity('certificados')
 export class Certificado {
