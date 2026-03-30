@@ -15,6 +15,8 @@ async def list_invoices(
     direcao: Optional[str] = Query(None, enum=["entrada", "saida"], description="entrada = Recebidas, saida = Emitidas"),
     status: Optional[str] = None,
     search: Optional[str] = None,
+    dt_inicio: Optional[str] = Query(None, description="Data Inicial (YYYY-MM-DD)"),
+    dt_fim: Optional[str] = Query(None, description="Data Final (YYYY-MM-DD)"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     user: dict = Depends(get_current_user)
@@ -59,6 +61,12 @@ async def list_invoices(
             
         if search:
             query = query.or_(f"numero.ilike.%{search}%,chave_acesso.ilike.%{search}%")
+            
+        if dt_inicio:
+            query = query.gte("data_emissao", f"{dt_inicio}T00:00:00Z")
+            
+        if dt_fim:
+            query = query.lte("data_emissao", f"{dt_fim}T23:59:59Z")
 
         # Filtro de Direção (Robustamente baseado no emitente)
         if direcao == "saida":

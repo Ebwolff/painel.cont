@@ -13,6 +13,8 @@ export function MonitorFiscal() {
         direcao: 'entrada', // Default to Received
         status: '',
         search: '',
+        dt_inicio: '',
+        dt_fim: '',
         page: 1
     });
 
@@ -27,6 +29,8 @@ export function MonitorFiscal() {
             if (filters.direcao) queryParams.append('direcao', filters.direcao);
             if (filters.status) queryParams.append('status', filters.status);
             if (filters.search) queryParams.append('search', filters.search);
+            if (filters.dt_inicio) queryParams.append('dt_inicio', filters.dt_inicio);
+            if (filters.dt_fim) queryParams.append('dt_fim', filters.dt_fim);
 
             const [notasRes, companiesRes] = await Promise.all([
                 api.get(`/notas/?${queryParams.toString()}`),
@@ -94,13 +98,31 @@ export function MonitorFiscal() {
                         ))}
                     </select>
 
-                    <form onSubmit={handleSearch} className="relative">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            title="Data Inicial"
+                            value={filters.dt_inicio}
+                            onChange={e => setFilters({ ...filters, dt_inicio: e.target.value, page: 1 })}
+                            className="bg-end-card border border-end-border text-end-text-sec text-xs py-2 px-2 rounded focus:outline-none focus:border-end-accent w-32"
+                        />
+                        <span className="text-end-text-sec text-xs">até</span>
+                        <input
+                            type="date"
+                            title="Data Final"
+                            value={filters.dt_fim}
+                            onChange={e => setFilters({ ...filters, dt_fim: e.target.value, page: 1 })}
+                            className="bg-end-card border border-end-border text-end-text-sec text-xs py-2 px-2 rounded focus:outline-none focus:border-end-accent w-32"
+                        />
+                    </div>
+
+                    <form onSubmit={handleSearch} className="relative flex-grow min-w-[200px]">
                         <input
                             type="text"
                             placeholder="Número ou Chave..."
                             value={filters.search}
                             onChange={e => setFilters({ ...filters, search: e.target.value })}
-                            className="bg-end-card border border-end-border text-white text-xs py-2 pl-9 pr-3 rounded focus:outline-none focus:border-end-accent w-48"
+                            className="bg-end-card border border-end-border text-white text-xs py-2 pl-9 pr-3 rounded focus:outline-none focus:border-end-accent w-full focus:w-full transition-all"
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-end-text-sec" size={14} />
                     </form>
