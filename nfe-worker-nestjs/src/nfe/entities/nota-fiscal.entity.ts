@@ -15,7 +15,7 @@ export enum DirecaoNota {
 }
 
 @Entity('notas_fiscais')
-@Index(['empresa_id', 'chave'], { unique: true }) // Constraint forte p/ concorrência
+@Index(['empresa_id', 'chave', 'created_at'], { unique: true }) // Constraint forte p/ concorrência + Suporte a Partitioning
 export class NotaFiscal {
   @PrimaryGeneratedColumn('uuid')
   id: string;

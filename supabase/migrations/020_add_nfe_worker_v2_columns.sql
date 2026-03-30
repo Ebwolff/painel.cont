@@ -28,6 +28,6 @@ BEGIN
         FROM pg_indexes 
         WHERE indexname = 'idx_notas_fiscais_empresa_chave_unique'
     ) THEN
-        CREATE UNIQUE INDEX "idx_notas_fiscais_empresa_chave_unique" ON "notas_fiscais" ("empresa_id", "chave_acesso");
+        CREATE UNIQUE INDEX "idx_notas_fiscais_empresa_chave_unique" ON "notas_fiscais" ("empresa_id", "chave_acesso", "created_at");
     END IF;
 END$$;
