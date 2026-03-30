@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotaFiscal, StatusManifestacao, TipoNota } from './entities/nota-fiscal.entity';
+import { NotaFiscal, StatusManifestacao, DirecaoNota } from './entities/nota-fiscal.entity';
 import { Empresa } from './entities/empresa.entity';
 import * as zlib from 'zlib';
 import { XMLParser } from 'fast-xml-parser';
@@ -90,9 +90,9 @@ export class NfeService {
         chave: chave,
         status_manifestacao: statusManifestacao,
         xml_url: s3Url || existing?.xml_url,
-        tipo: isEmitida ? TipoNota.EMITIDA : TipoNota.RECEBIDA,
-        emitente: doc.tipoDoc === 'resNFe' ? parsed.resNFe.xNome : parsed.nfeProc.NFe.infNFe.emit.xNome,
-        destinatario: doc.tipoDoc === 'resNFe' ? undefined : parsed.nfeProc.NFe.infNFe.dest.xNome,
+        direcao: isEmitida ? DirecaoNota.EMITIDA : DirecaoNota.RECEBIDA,
+        emitente_nome: doc.tipoDoc === 'resNFe' ? parsed.resNFe.xNome : parsed.nfeProc.NFe.infNFe.emit.xNome,
+        destinatario_nome: doc.tipoDoc === 'resNFe' ? undefined : parsed.nfeProc.NFe.infNFe.dest.xNome,
         valor_total: doc.tipoDoc === 'resNFe' ? parseFloat(parsed.resNFe.vNF) : parseFloat(parsed.nfeProc.NFe.infNFe.total.ICMSTot.vNF),
         data_emissao: doc.tipoDoc === 'resNFe' ? new Date(parsed.resNFe.dhEmi) : new Date(parsed.nfeProc.NFe.infNFe.ide.dhEmi),
         processing: false // Release Lock

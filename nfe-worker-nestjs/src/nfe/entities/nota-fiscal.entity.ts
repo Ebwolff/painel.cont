@@ -9,7 +9,7 @@ export enum StatusManifestacao {
   NAO_ENCONTRADA = 'nao_encontrada'
 }
 
-export enum TipoNota {
+export enum DirecaoNota {
   EMITIDA = 'emitida',
   RECEBIDA = 'recebida'
 }
@@ -23,23 +23,23 @@ export class NotaFiscal {
   @Column('uuid')
   empresa_id: string;
 
-  @Column({ unique: true })
+  @Column({ name: 'chave_acesso', unique: true })
   chave: string;
 
   @Column({ nullable: true })
   nsu: string;
 
-  @Column({ type: 'enum', enum: TipoNota, default: TipoNota.RECEBIDA })
-  tipo: TipoNota;
+  @Column({ type: 'enum', enum: DirecaoNota, default: DirecaoNota.RECEBIDA })
+  direcao: DirecaoNota;
 
   @Column({ nullable: true })
   xml_url: string;
 
   @Column({ nullable: true })
-  emitente: string;
+  emitente_nome: string;
 
   @Column({ nullable: true })
-  destinatario: string;
+  destinatario_nome: string;
 
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   valor_total: number;
@@ -50,10 +50,9 @@ export class NotaFiscal {
   @Column({ type: 'timestamp', nullable: true })
   data_emissao: Date;
 
-  @Column({ type: 'enum', enum: StatusManifestacao, default: StatusManifestacao.PENDENTE })
+  @Column({ type: 'varchar', default: StatusManifestacao.PENDENTE })
   status_manifestacao: StatusManifestacao;
 
-  // Lock Lógico (Idempotência e Prevenção de Race Conditions)
   @Column({ type: 'boolean', default: false })
   processing: boolean;
 
