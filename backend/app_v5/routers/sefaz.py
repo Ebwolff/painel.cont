@@ -118,3 +118,51 @@ async def get_sync_status(
     except Exception as e:
         logger.error(f"SEFAZ: Erro ao buscar status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/rpa/sincronizar/{empresa_id}", summary="Aciona robô RPA para buscar notas Emitidas")
+async def rpa_sincronizar_emitidas(
+    empresa_id: str,
+    chave: str = Query(..., description="Chave de Acesso de 44 dígitos da NF-e Emitida"),
+    token: str = Depends(get_current_token),
+):
+    """
+    Envia um Job para a fila Redis do RPA (Python Playwright) baixar as notas Emitidas.
+    A Vercel não ficará aguardando o processamento do robô.
+    """
+    import json
+    import redis
+    import os
+
+    try:
+        # Validar permissão da empresa
+        client = supabase_service.get_client_for_user(token)
+        res = client.rpc("get_my_tenant").execute()
+        if not res.data:
+            raise HTTPException(status_code=403, detail="Escritório não logado.")
+
+        admin_client = supabase_service.get_service_client()
+        cert_data = admin_client.table("certificados_a1").select("senha_hash").eq("empresa_id", empresa_id).maybe_single().execute()
+        
+        if not cert_data.data:
+            raise HTTPException(status_code=400, detail="Empresa não possui Certificado A1 configurado.")
+
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        r = redis.Redis.from_url(redis_url, decode_responses=True)
+
+        job_payload = {
+            "empresa_id": empresa_id,
+            "chave": chave,
+            "pfx_path": f"./certs/{empresa_id}.pfx",
+            "pfx_password": cert_data.data["senha_hash"] 
+        }
+
+        r.rpush("nfe_download_queue", json.dumps(job_payload))
+
+        return {
+            "message": "Pedido enviado ao Robô RPA. A nota aparecerá na lista em alguns minutos.",
+            "status": "QUEUED"
+        }
+
+    except Exception as e:
+        logger.error(f"SEFAZ: Erro RPA despachante: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

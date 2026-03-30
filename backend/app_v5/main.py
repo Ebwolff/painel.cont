@@ -122,7 +122,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug, items, simulation, features, anomalies, admin_rules, notas
+from app_v5.routers import dashboard, upload, alerts, companies, roi, certificates, sefaz, admin, users, debug, items, simulation, features, anomalies, admin_rules, notas, webhooks
 
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(debug.router, prefix="/api/dashboard", tags=["Dashboard"])
@@ -137,6 +137,7 @@ app.include_router(notas.router, prefix="/api/notas", tags=["Notas"])
 app.include_router(simulation.router, prefix="/api/simulation", tags=["Simulation"])
 app.include_router(features.router, prefix="/api/features", tags=["Features"])
 app.include_router(anomalies.router, prefix="/api/anomalies", tags=["Anomalies"])
+app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
 app.include_router(admin_rules.router, prefix="/api", tags=["Admin - Fiscal Rules"])
 app.include_router(admin.router, prefix="/api") # Prefixo já incluído no router (/admin)
 app.include_router(users.router, prefix="/api") # Prefixo já incluído (/users)
