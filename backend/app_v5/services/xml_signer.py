@@ -59,8 +59,12 @@ class XMLSigner:
             method=methods.enveloped,
             signature_algorithm=self.sig_method,
             digest_algorithm=self.digest_alg,
-            c14n_algorithm=CanonicalizationMethod.EXCLUSIVE_XML_CANONICALIZATION_1_0,
+            c14n_algorithm=CanonicalizationMethod.CANONICAL_XML_1_0,
         )
+        
+        # Remove "ds:" prefix for strict SEFAZ compat
+        import signxml
+        signer.namespaces = {None: signxml.namespaces.ds}
 
         signed_root = signer.sign(
             xml_element,
@@ -69,20 +73,6 @@ class XMLSigner:
             reference_uri=f"#{reference_id}",
             always_add_key_value=False,
         )
-
-        # ═══════════════════════════════════════
-        # SEFAZ exige Signature SEM prefixo ds:
-        # signxml sempre usa ds:Signature, ds:SignedInfo etc.
-        # Removemos o prefixo para compatibilidade com XSD da SEFAZ
-        # ═══════════════════════════════════════
-        DSIG_NS = "http://www.w3.org/2000/09/xmldsig#"
-        for elem in signed_root.iter():
-            if elem.tag and isinstance(elem.tag, str) and elem.tag.startswith(f"{{{DSIG_NS}}}"):
-                local = elem.tag.split("}")[-1]
-                elem.tag = local
-                # Mover namespace para atributo xmlns se for o Signature root
-                if local == "Signature":
-                    elem.set("xmlns", DSIG_NS)
 
         logger.debug(f"XML assinado com sucesso (ref={reference_id})")
         return signed_root

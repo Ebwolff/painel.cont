@@ -266,35 +266,45 @@ class SefazClient:
         # ID: ID + tpEvento(6) + chNFe(44) + nSeqEvento(02) = 52 chars
         event_id = f"ID{tp_evento}{chave_nfe}{str(n_seq_evento).zfill(2)}"
 
-        dh_evento = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S-03:00")
+        # Padrão UTC -3
+        from datetime import timedelta
+        dh_evento = (datetime.now(timezone.utc) - timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M:%S-03:00")
         x_evento = self.DESCRICOES_EVENTO.get(tp_evento, "Ciencia da Operacao")
 
         # 1. Montar XML do evento
-        evento = etree.Element("evento", versao="1.00", xmlns=NFE_NS)
-        inf = etree.SubElement(evento, "infEvento", Id=event_id)
+        nsmap = {None: NFE_NS}
+        Q = lambda tag: f"{{{NFE_NS}}}{tag}"
+        
+        evento = etree.Element(Q("evento"), versao="1.00", nsmap=nsmap)
+        inf = etree.SubElement(evento, Q("infEvento"), Id=event_id)
 
-        etree.SubElement(inf, "cOrgao").text = c_orgao
-        etree.SubElement(inf, "tpAmb").text = tp_amb
-        etree.SubElement(inf, "CNPJ").text = cnpj_limpo
-        etree.SubElement(inf, "chNFe").text = chave_nfe
-        etree.SubElement(inf, "dhEvento").text = dh_evento
-        etree.SubElement(inf, "tpEvento").text = tp_evento
-        etree.SubElement(inf, "nSeqEvento").text = str(n_seq_evento)
-        etree.SubElement(inf, "verEvento").text = "1.00"
+        etree.SubElement(inf, Q("cOrgao")).text = c_orgao
+        etree.SubElement(inf, Q("tpAmb")).text = tp_amb
+        etree.SubElement(inf, Q("CNPJ")).text = cnpj_limpo
+        etree.SubElement(inf, Q("chNFe")).text = chave_nfe
+        etree.SubElement(inf, Q("dhEvento")).text = dh_evento
+        etree.SubElement(inf, Q("tpEvento")).text = tp_evento
+        etree.SubElement(inf, Q("nSeqEvento")).text = str(n_seq_evento)
+        etree.SubElement(inf, Q("verEvento")).text = "1.00"
 
-        det = etree.SubElement(inf, "detEvento", versao="1.00")
-        etree.SubElement(det, "descEvento").text = x_evento
+        det = etree.SubElement(inf, Q("detEvento"), versao="1.00")
+        etree.SubElement(det, Q("descEvento")).text = x_evento
 
         # 2. Assinar XML com certificado A1
         signer = XMLSigner(pfx_bytes, password)
         evento_assinado = signer.sign_event(evento, event_id)
 
         # 3. Envelope envEvento
-        env = etree.Element("envEvento", versao="1.00", xmlns=NFE_NS)
-        etree.SubElement(env, "idLote").text = gerar_id_lote()
+        env = etree.Element(Q("envEvento"), versao="1.00", nsmap=nsmap)
+        etree.SubElement(env, Q("idLote")).text = gerar_id_lote()
         env.append(evento_assinado)
 
         xml_str = etree.tostring(env, xml_declaration=False, encoding="unicode")
+        
+        # Eliminar quebras de linha e garantir o xmlns redundante exigido
+        xml_str = xml_str.replace("\n", "").replace("\r", "")
+        if '<evento versao' in xml_str:
+            xml_str = xml_str.replace('<evento versao', '<evento xmlns="http://www.portalfiscal.inf.br/nfe" versao')
 
         # 4. SOAP 1.2 Envelope
         endpoint = get_recepcao_evento_url(uf_empresa, self.ambiente)
@@ -302,9 +312,7 @@ class SefazClient:
         soap = f'''<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
-    <nfeRecepcaoEvento xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4">
-      <nfeDadosMsg>{xml_str}</nfeDadosMsg>
-    </nfeRecepcaoEvento>
+    <nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4">{xml_str}</nfeDadosMsg>
   </soap12:Body>
 </soap12:Envelope>'''
 

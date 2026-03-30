@@ -89,9 +89,11 @@ ESTADOS_SVRS = {
 
 
 def get_recepcao_evento_url(uf: str, ambiente: str = "producao") -> str:
-    """Resolve endpoint RecepcaoEvento4 para uma UF e ambiente."""
-    uf = uf.upper()
-    endpoints = RECEPCAO_EVENTO_PROPRIO.get(ambiente, {})
-    if uf in endpoints:
-        return endpoints[uf]
-    return SVRS.get(ambiente, SVRS["producao"])
+    """
+    Resolve endpoint RecepcaoEvento4 para uma UF e ambiente.
+    NOTA: Para Eventos de Manifestação do Destinatário, SEMPRE envia para AN, 
+    independentemente da UF da empresa, pois cOrgao=91.
+    """
+    if ambiente == "producao":
+        return "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx"
+    return "https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx"
