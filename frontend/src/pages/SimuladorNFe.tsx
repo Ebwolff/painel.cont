@@ -21,13 +21,19 @@ interface NFeItem {
     v_cofins?: number;
     v_cbs?: number;
     v_ibs?: number;
+    vbc_icms?: number;
+    vbc_ipi?: number;
+    vbc_pis?: number;
+    vbc_cofins?: number;
+    vbc_cbs?: number;
+    vbc_ibs?: number;
 }
 
 export function SimuladorNFe() {
     const [emitenteUf, setEmitenteUf] = useState('SP');
     const [destinatarioUf, setDestinatarioUf] = useState('SP');
     const [itens, setItens] = useState<NFeItem[]>([
-        { n_item: 1, ncm: '61091000', cfop: '5102', cst: '00', v_prod: 100.00, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0 }
+        { n_item: 1, ncm: '61091000', cfop: '5102', cst: '00', v_prod: 100.00, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0, vbc_icms: 0, vbc_ipi: 0, vbc_pis: 0, vbc_cofins: 0, vbc_cbs: 0, vbc_ibs: 0 }
     ]);
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -91,7 +97,7 @@ export function SimuladorNFe() {
         const defaultCfop = emitenteUf === destinatarioUf ? '5102' : '6102';
         setItens([
             ...itens,
-            { n_item: itens.length + 1, ncm: '', cfop: defaultCfop, cst: '', v_prod: 0, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0 }
+            { n_item: itens.length + 1, ncm: '', cfop: defaultCfop, cst: '', v_prod: 0, v_icms: 0, v_ipi: 0, v_pis: 0, v_cofins: 0, v_cbs: 0, v_ibs: 0, vbc_icms: 0, vbc_ipi: 0, vbc_pis: 0, vbc_cofins: 0, vbc_cbs: 0, vbc_ibs: 0 }
         ]);
     };
 
@@ -140,7 +146,13 @@ export function SimuladorNFe() {
                     v_pis: taxes.pis || 0,
                     v_cofins: taxes.cofins || 0,
                     v_cbs: taxes.cbs || 0,
-                    v_ibs: taxes.ibs || 0
+                    v_ibs: taxes.ibs || 0,
+                    vbc_icms: taxes.vbc_icms || 0,
+                    vbc_ipi: taxes.vbc_ipi || 0,
+                    vbc_pis: taxes.vbc_pis || 0,
+                    vbc_cofins: taxes.vbc_cofins || 0,
+                    vbc_cbs: taxes.vbc_cbs || 0,
+                    vbc_ibs: taxes.vbc_ibs || 0
                 };
             });
             setItens(newItens);
@@ -269,33 +281,65 @@ export function SimuladorNFe() {
                                         </div>
                                     </div>
 
+                                    {/* Bases de Cálculo */}
                                     <div className="grid grid-cols-12 gap-2 items-end border-t border-white/5 pt-3 mt-1">
                                         <div className="col-span-12">
-                                            <p className="text-[9px] font-bold text-end-accent uppercase mb-1 opacity-80">Impostos Destacados na Nota (R$)</p>
+                                            <p className="text-[9px] font-bold text-end-accent uppercase mb-1 opacity-80">Bases de Cálculo - vBC (R$)</p>
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[8px] text-end-text-sec uppercase mb-1">ICMS</label>
-                                            <input type="number" step="0.01" value={item.v_icms ?? 0} onChange={(e) => handleUpdateItem(index, 'v_icms', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                            <input type="number" step="0.01" value={item.vbc_icms ?? 0} onChange={(e) => handleUpdateItem(index, 'vbc_icms', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[8px] text-end-text-sec uppercase mb-1">IPI</label>
-                                            <input type="number" step="0.01" value={item.v_ipi ?? 0} onChange={(e) => handleUpdateItem(index, 'v_ipi', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                            <input type="number" step="0.01" value={item.vbc_ipi ?? 0} onChange={(e) => handleUpdateItem(index, 'vbc_ipi', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[8px] text-end-text-sec uppercase mb-1">PIS</label>
-                                            <input type="number" step="0.01" value={item.v_pis ?? 0} onChange={(e) => handleUpdateItem(index, 'v_pis', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                            <input type="number" step="0.01" value={item.vbc_pis ?? 0} onChange={(e) => handleUpdateItem(index, 'vbc_pis', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[8px] text-end-text-sec uppercase mb-1">COFINS</label>
-                                            <input type="number" step="0.01" value={item.v_cofins ?? 0} onChange={(e) => handleUpdateItem(index, 'v_cofins', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                            <input type="number" step="0.01" value={item.vbc_cofins ?? 0} onChange={(e) => handleUpdateItem(index, 'vbc_cofins', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[8px] text-end-text-sec uppercase mb-1">CBS</label>
-                                            <input type="number" step="0.01" value={item.v_cbs ?? 0} onChange={(e) => handleUpdateItem(index, 'v_cbs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                            <input type="number" step="0.01" value={item.vbc_cbs ?? 0} onChange={(e) => handleUpdateItem(index, 'vbc_cbs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-[8px] text-end-text-sec uppercase mb-1">IBS</label>
-                                            <input type="number" step="0.01" value={item.v_ibs ?? 0} onChange={(e) => handleUpdateItem(index, 'v_ibs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                            <input type="number" step="0.01" value={item.vbc_ibs ?? 0} onChange={(e) => handleUpdateItem(index, 'vbc_ibs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-white font-mono" />
+                                        </div>
+                                    </div>
+
+                                    {/* Valores dos Impostos */}
+                                    <div className="grid grid-cols-12 gap-2 items-end border-t border-white/5 pt-3 mt-2 mb-2">
+                                        <div className="col-span-12">
+                                            <p className="text-[9px] font-bold text-end-accent uppercase mb-1 opacity-80">Valor do Imposto Destacado (R$)</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">ICMS</label>
+                                            <input type="number" step="0.01" value={item.v_icms ?? 0} onChange={(e) => handleUpdateItem(index, 'v_icms', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-end-accent font-mono font-bold" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">IPI</label>
+                                            <input type="number" step="0.01" value={item.v_ipi ?? 0} onChange={(e) => handleUpdateItem(index, 'v_ipi', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-end-accent font-mono font-bold" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">PIS</label>
+                                            <input type="number" step="0.01" value={item.v_pis ?? 0} onChange={(e) => handleUpdateItem(index, 'v_pis', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-end-accent font-mono font-bold" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">COFINS</label>
+                                            <input type="number" step="0.01" value={item.v_cofins ?? 0} onChange={(e) => handleUpdateItem(index, 'v_cofins', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-end-accent font-mono font-bold" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">CBS</label>
+                                            <input type="number" step="0.01" value={item.v_cbs ?? 0} onChange={(e) => handleUpdateItem(index, 'v_cbs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-end-accent font-mono font-bold" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[8px] text-end-text-sec uppercase mb-1">IBS</label>
+                                            <input type="number" step="0.01" value={item.v_ibs ?? 0} onChange={(e) => handleUpdateItem(index, 'v_ibs', parseFloat(e.target.value) || 0)} className="w-full bg-white/5 border border-end-border rounded px-2 py-1.5 text-xs text-end-accent font-mono font-bold" />
                                         </div>
                                     </div>
                                 </div>

@@ -117,8 +117,10 @@ class XMLParserService:
                 "valor_total": float(self._get_text(root, "total/ICMSTot/vNF") or 0.0),
                 
                 # Campos da Reforma (CBS/IBS)
-                "valor_cbs": float(self._get_text(root, "total/vCBS") or 0.0), 
-                "valor_ibs": float(self._get_text(root, "total/vIBS") or 0.0), 
+                "valor_cbs": float(self._get_text(root, "total/ICMSTot/vCBS") or 0.0), 
+                "valor_ibs": float(self._get_text(root, "total/ICMSTot/vIBS") or 0.0),
+                "vbc_cbs": float(self._get_text(root, "total/ICMSTot/vBCCBS") or 0.0),
+                "vbc_ibs": float(self._get_text(root, "total/ICMSTot/vBCIBS") or 0.0), 
                 
                 "itens": []
             }
@@ -142,15 +144,25 @@ class XMLParserService:
                     "v_prod": float(self._get_text(det, "prod/vProd") or 0.0),
                     # Campos da Reforma
                     "v_cbs": float(self._get_text(det, "imposto/vCBS") or 0.0),
+                    "vbc_cbs": float(self._get_text(det, "imposto/vBCCBS") or 0.0),
                     "v_ibs": float(self._get_text(det, "imposto/vIBS") or 0.0),
+                    "vbc_ibs": float(self._get_text(det, "imposto/vBCIBS") or 0.0),
                     # Tributos Vigentes (Legado)
                     "v_pis": float(
                         self._get_text(det, "imposto/PIS/PISAliq/vPIS") or 
                         self._get_text(det, "imposto/PIS/PISOutr/vPIS") or 0.0
                     ),
+                    "vbc_pis": float(
+                        self._get_text(det, "imposto/PIS/PISAliq/vBC") or 
+                        self._get_text(det, "imposto/PIS/PISOutr/vBC") or 0.0
+                    ),
                     "v_cofins": float(
                         self._get_text(det, "imposto/COFINS/COFINSAliq/vCOFINS") or 
                         self._get_text(det, "imposto/COFINS/COFINSOutr/vCOFINS") or 0.0
+                    ),
+                    "vbc_cofins": float(
+                        self._get_text(det, "imposto/COFINS/COFINSAliq/vBC") or 
+                        self._get_text(det, "imposto/COFINS/COFINSOutr/vBC") or 0.0
                     ),
                     "v_icms": float(
                         self._get_text(det, "imposto/ICMS/ICMS00/vICMS") or 
@@ -158,6 +170,16 @@ class XMLParserService:
                         self._get_text(det, "imposto/ICMS/ICMS20/vICMS") or 
                         self._get_text(det, "imposto/ICMS/ICMS70/vICMS") or 
                         self._get_text(det, "imposto/ICMS/ICMS90/vICMS") or 0.0
+                    ),
+                    "vbc_icms": float(
+                        self._get_text(det, "imposto/ICMS/ICMS00/vBC") or 
+                        self._get_text(det, "imposto/ICMS/ICMS10/vBC") or 
+                        self._get_text(det, "imposto/ICMS/ICMS20/vBC") or 
+                        self._get_text(det, "imposto/ICMS/ICMS70/vBC") or 
+                        self._get_text(det, "imposto/ICMS/ICMS90/vBC") or 0.0
+                    ),
+                    "vbc_ipi": float(
+                        self._get_text(det, "imposto/IPI/IPITrib/vBC") or 0.0
                     ),
                 }
                 dados["itens"].append(item)

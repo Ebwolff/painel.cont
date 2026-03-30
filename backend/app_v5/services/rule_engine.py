@@ -149,6 +149,7 @@ class RuleEngineService:
 
         results_flags = {tax: True for tax in tax_map.keys()}
         tax_values = {tax: 0.0 for tax in tax_map.keys()}
+        tax_bases = {f"vbc_{tax}": 0.0 for tax in tax_map.keys()}
 
         for rule in rules:
             rule_type = rule.get("rule_type")
@@ -157,8 +158,17 @@ class RuleEngineService:
 
             field_name = tax_map[rule_type]
             expected_rate = float(rule.get("expected_rate", 0))
-            expected_value = round(v_prod * expected_rate, 2)
+            
+            # Identificação da Base de Cálculo
+            expected_base = v_prod
+            base_reduction = float(rule.get("parameters", {}).get("base_reduction", 1.0))
+            if base_reduction != 1.0:
+                expected_base = round(expected_base * base_reduction, 2)
+                
+            expected_value = round(expected_base * expected_rate, 2)
+            
             tax_values[rule_type] = expected_value
+            tax_bases[f"vbc_{rule_type}"] = expected_base
             severity = rule.get("severity", "media")
             category = rule.get("category", "compliance")
             
@@ -189,13 +199,16 @@ class RuleEngineService:
                 })
 
 
+        # Margear valores calculados e bases de cálculo para o output
+        full_tax_info = {**tax_values, **tax_bases}
+
         return {
             "n_item": item.get("n_item"),
             "ncm": ncm,
             "cfop": cfop,
             "cst": cst,
             "validation_results": results_flags,
-            "tax_values": tax_values,
+            "tax_values": full_tax_info,
             "alertas": alertas
         }
 

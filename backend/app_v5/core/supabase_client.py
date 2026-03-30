@@ -137,6 +137,8 @@ class SupabaseService:
             "valor_total": nfe_data.get("valor_total"),
             "valor_cbs": nfe_data.get("valor_cbs"),
             "valor_ibs": nfe_data.get("valor_ibs"),
+            "vbc_cbs": nfe_data.get("vbc_cbs"),
+            "vbc_ibs": nfe_data.get("vbc_ibs"),
             "cbs_correto": validation_result["validation_details"]["cbs_ok"],
             "ibs_correto": validation_result["validation_details"]["ibs_ok"],
             "status": validation_result["status"],
@@ -199,6 +201,12 @@ class SupabaseService:
                     "v_prod": item.get("v_prod"),
                     "v_cbs": item.get("v_cbs"),
                     "v_ibs": item.get("v_ibs"),
+                    "vbc_icms": item.get("vbc_icms"),
+                    "vbc_ipi": item.get("vbc_ipi"),
+                    "vbc_pis": item.get("vbc_pis"),
+                    "vbc_cofins": item.get("vbc_cofins"),
+                    "vbc_cbs": item.get("vbc_cbs"),
+                    "vbc_ibs": item.get("vbc_ibs"),
                     "cbs_correto": item.get("cbs_correto", True), # Placeholder, validação por item virá na prox iteração
                     "ibs_correto": item.get("ibs_correto", True)
                 })

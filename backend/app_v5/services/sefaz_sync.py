@@ -305,6 +305,12 @@ class SefazSyncService:
                                 "v_prod": item.get("v_prod"),
                                 "v_cbs": item.get("v_cbs"),
                                 "v_ibs": item.get("v_ibs"),
+                                "vbc_icms": item.get("vbc_icms"),
+                                "vbc_ipi": item.get("vbc_ipi"),
+                                "vbc_pis": item.get("vbc_pis"),
+                                "vbc_cofins": item.get("vbc_cofins"),
+                                "vbc_cbs": item.get("vbc_cbs"),
+                                "vbc_ibs": item.get("vbc_ibs"),
                                 "cbs_correto": item_result.get("cbs_ok", True),
                                 "ibs_correto": item_result.get("ibs_ok", True),
                             }).execute()
@@ -458,6 +464,12 @@ class SefazSyncService:
                                             "v_prod": item.get("v_prod"),
                                             "v_cbs": item.get("v_cbs"),
                                             "v_ibs": item.get("v_ibs"),
+                                            "vbc_icms": item.get("vbc_icms"),
+                                            "vbc_ipi": item.get("vbc_ipi"),
+                                            "vbc_pis": item.get("vbc_pis"),
+                                            "vbc_cofins": item.get("vbc_cofins"),
+                                            "vbc_cbs": item.get("vbc_cbs"),
+                                            "vbc_ibs": item.get("vbc_ibs"),
                                         }).execute()
 
                                     notas_completas += 1
