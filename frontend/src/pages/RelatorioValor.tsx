@@ -25,56 +25,146 @@ export function RelatorioValor() {
     const LAUDO_DETAILS: Record<string, any> = {
         'PIS / COFINS': {
             title: 'Auditoria de PIS e COFINS',
-            desc: 'Validação profunda das regras de Monofasia, verificação de CSTs e exclusão do ICMS da base de cálculo PIS/COFINS.',
+            desc: 'Varredura cruzada das saídas e entradas para identificação de não cumulatividade estrutural e monofasia.',
             checks: [
-                { text: 'Exclusão do ICMS da Base de Cálculo confirmada pelo STF', status: 'validado' },
-                { text: 'Produtos Sujeitos à Tributação Monofásica segregados corretamente', status: 'validado' },
-                { text: 'Cruzamento de CSTs de Entrada (Crédito) vs Saída (Débito)', status: 'validado' }
+                { 
+                    text: 'Exclusão do ICMS da Base de Cálculo (Tese do Século)', 
+                    legal: 'STF RE 574.706 / Lei 12.973/14',
+                    params: 'vBC_PIS = (Total - ICMS)',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Identificação de Produtos Monofásicos Mapeados', 
+                    legal: 'Lei 10.147/00 (Autopeças, Bebidas, Higiene)',
+                    params: 'CST 04 (Saída) / CST 70, 73 (Entrada)',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Anomalias de Alíquota Zero (Cesta Básica)', 
+                    legal: 'Leis 10.925/04 e 12.839/13',
+                    params: 'CST 06, Alíquotas 0,00%',
+                    status: 'validado' 
+                }
             ]
         },
         'ICMS / ICMS-ST': {
             title: 'Auditoria de ICMS e Subst. Tributária',
             desc: 'Mapeamento de alíquotas interestaduais, MVA aplicado e regras de ICMS-ST recolhido anteriormente.',
             checks: [
-                { text: 'Margem de Valor Agregado (MVA) aplicada conforme UF destino', status: 'validado' },
-                { text: 'Diferencial de Alíquota (DIFAL) analisado', status: 'validado' },
-                { text: 'CFOPs de Substituição Tributária (ex: 5.405) consistentes com NCM', status: 'validado' }
+                { 
+                    text: 'Margem de Valor Agregado (MVA-ST) ajustada por UF', 
+                    legal: 'Convênios ICMS CGSN / RICMS Estadual',
+                    params: 'NCM cruzado com CEST vigente',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Isenções de DIFAL e Antecipação', 
+                    legal: 'EC 87/2015 / Convênio 93/15',
+                    params: 'CFOPs 6.107, 6.108',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Revogação de ICMS-ST (Substituído Varejo)', 
+                    legal: 'Decisões STF (Restituição ICMS-ST)',
+                    params: 'CFOP 5.405 / CST 60',
+                    status: 'validado' 
+                }
             ]
         },
         'IPI / ISS': {
             title: 'Auditoria de IPI e ISSQN',
-            desc: 'Verificação rigorosa de competência municipal (LC 116/03) e enquadramento de industrialização.',
+            desc: 'Verificação rigorosa de competência municipal (LC 116/03) e enquadramento de industrialização vs tributação IPI.',
             checks: [
-                { text: 'Fato gerador de serviços municipais (ISS) vs Mercadorias cruzado', status: 'validado' },
-                { text: 'IPI sobre frete e despesas acessórias destacado', status: 'validado' },
-                { text: 'Retenções de ISS validadas conforme município', status: 'validado' }
+                { 
+                    text: 'Fato Gerador: Serviço vs Fornecimento (ISS vs ICMS)', 
+                    legal: 'Lei Complementar 116/2003 (Anexo I)',
+                    params: 'CFOP de Serviço Conjugado',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Inclusão de Fretes e Despesas na Base do IPI', 
+                    legal: 'RIPI - Decreto 7.212/2010',
+                    params: 'Tag <vFrete>, <vOutro>',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Industrialização por Encomenda (Retenções)', 
+                    legal: 'STJ Jurisprudência ISS vs IPI',
+                    params: 'CFOP 5.901, 5.902',
+                    status: 'validado' 
+                }
             ]
         },
         'CST / CSOSN': {
             title: 'Validação de Código de Situação Tributária',
-            desc: 'Análise estrutural comparando o CST/CSOSN do documento com o Regime Tributário ativo da empresa na Receita Federal.',
+            desc: 'Análise estrutural comparando o par CFOP+CST do documento com o Regime Tributário ativo da empresa na Receita Federal.',
             checks: [
-                { text: 'CSOSN compatível exclusivo para optantes do Simples Nacional', status: 'validado' },
-                { text: 'CRT (Código de Regime Tributário) do emissor validado no portal nacional', status: 'validado' },
-                { text: 'CFOP e CST de Substituição Tributária / Monofasia sincronizados', status: 'validado' }
+                { 
+                    text: 'Conflito de CSOSN (Simples) em emissor Lucro Real/Presumido', 
+                    legal: 'Ajuste SINIEF 07/05',
+                    params: 'Tag <CRT> 1 vs CSOSN 101-900',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Compatibilidade CFOP x CST Monofásico/ST', 
+                    legal: 'Tabela COTEPE / Anexo Convênio s/n 1970',
+                    params: 'CFOP 5.405 REQUER CST 60/05/CSOSN 500',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Validação de CST de PIS/COFINS (Crédito)', 
+                    legal: 'IN RFB 1911/2019',
+                    params: 'CST Entrada 50 a 55 vs Saídas correspondentes',
+                    status: 'validado' 
+                }
             ]
         },
         'Retenções na Fonte': {
             title: 'Auditoria de Retenções Federais',
-            desc: 'Validação de impostos retidos na fonte (IRRF, CSLL, PIS e COFINS) nos serviços prestados/tomados.',
+            desc: 'Validação de impostos retidos na fonte (IRRF, CSLL, PIS e COFINS) nos serviços prestados e tomados.',
             checks: [
-                { text: 'CSRF (4.65%) corretamente destacado e retido em serviços', status: 'validado' },
-                { text: 'IRRF Corporativo (1.50%) calculado e conferido na fonte', status: 'validado' },
-                { text: 'Assinatura digital e alíquota confirmada com base no anexo de serviços', status: 'validado' }
+                { 
+                    text: 'CSRF (PIS/COFINS/CSLL) e o limite de R$ 10,00', 
+                    legal: 'Lei 10.833/2003, Art. 30',
+                    params: 'Alíquota total 4.65% (P:0.65, C:3.0, CS:1.0)',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Retenção de IRRF PJ x PJ (Serviços Profissionais)', 
+                    legal: 'RIR/2018 - Decreto 9.580/18',
+                    params: 'Alíquota de 1.5% ou 1.0% retido',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Dispensa de Retenção para Optantes Simples', 
+                    legal: 'IN RFB 765/2007',
+                    params: 'Fornecedor CRT=1 (Sem Retenção)',
+                    status: 'validado' 
+                }
             ]
         },
         'NCM de Produtos': {
             title: 'Auditoria de Classificação Fiscal',
             desc: 'Mapeamento massivo linha a linha dos NCMs e CESTs dos produtos vendidos e cruzamento contra as regras vigentes na Tabela TIPI.',
             checks: [
-                { text: 'Identificação e isolamento de NCMs inativos, genéricos (9999) ou revogados', status: 'validado' },
-                { text: 'Obrigatoriedade de CEST presente para produtos sujeitos à ST', status: 'validado' },
-                { text: 'Alíquotas de tributação Federal/Estadual ancoradas na nomenclatura NCM', status: 'validado' }
+                { 
+                    text: 'Identificação de NCMs Inativos ou Revogados', 
+                    legal: 'Resoluções CAMEX / Tabela TIPI Atual',
+                    params: 'Validação de Vigência (ano corrente)',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Obrigatoriedade de CEST vinculado ao NCM', 
+                    legal: 'Convênio ICMS 142/2018',
+                    params: 'Tag <CEST> exigida caso NCM esteja no Anexo I',
+                    status: 'validado' 
+                },
+                { 
+                    text: 'Uso indevido de NCM Genérico', 
+                    legal: 'Ajuste SINIEF 22/13',
+                    params: 'Bloqueio de finalizadores "9999" (Capítulo 99)',
+                    status: 'validado' 
+                }
             ]
         }
     };
@@ -662,9 +752,30 @@ export function RelatorioValor() {
                                     <div className="mt-0.5">
                                         <ShieldCheck size={18} className="text-end-success" />
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">{check.text}</p>
-                                        <p className="text-[10px] text-end-text-sec uppercase mt-1">Conformidade Assinada Digitalmente pela IA</p>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-bold text-white mb-2">{check.text}</p>
+                                        
+                                        {check.legal && check.params && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 p-3 bg-black/20 rounded border border-white/5">
+                                                <div>
+                                                    <p className="text-[9px] text-end-text-sec uppercase mb-1 tracking-widest">Base Legal / Jurisprudência</p>
+                                                    <p className="text-[11px] text-white font-medium flex items-center gap-1.5 hover:text-end-accent cursor-pointer transition-colors">
+                                                        <BarChart3 size={10} className="text-end-text-sec" />
+                                                        {check.legal}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] text-end-text-sec uppercase mb-1 tracking-widest">Algoritmo de Mapeamento</p>
+                                                    <p className="text-[11px] text-end-accent font-mono bg-end-accent/10 py-0.5 px-2 rounded inline-block">
+                                                        {check.params}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        <p className="text-[9px] text-end-text-sec uppercase mt-3 flex items-center gap-1">
+                                            <ShieldCheck size={10} className="text-end-success" /> Conformidade Assinada Digitalmente pela IA
+                                        </p>
                                     </div>
                                 </div>
                             ))}
