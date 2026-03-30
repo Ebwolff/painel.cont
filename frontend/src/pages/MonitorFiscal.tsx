@@ -34,7 +34,7 @@ export function MonitorFiscal() {
         setRpaLoading(true);
         setRpaMensagem('');
         try {
-            const res = await api.post(`/sefaz/rpa/sincronizar/${filters.empresa_id}?chave=${chaveRpa}`);
+            const res = await api.post(`/sefaz/rpa/sincronizar/${filters.empresa_id}?chave=${chaveRpa}`, {});
             setRpaMensagem(res.message || 'Robô acionado!');
             setChaveRpa('');
         } catch (error: any) {
