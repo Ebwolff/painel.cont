@@ -38,6 +38,7 @@ export function Dashboard() {
     const { hasFeature, tier } = useFeatures();
     const [error, setError] = useState<string | null>(null);
     const [isAnomalyModalOpen, setIsAnomalyModalOpen] = useState(false);
+    const [selectedAnomalyIdx, setSelectedAnomalyIdx] = useState<number | null>(null);
 
     useEffect(() => {
         // Fetch metrics from our FastAPI backend
@@ -350,46 +351,154 @@ export function Dashboard() {
             {/* Anomaly Modal */}
             {isAnomalyModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-end-card border border-end-border rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+                    <div className="bg-end-card border border-end-border rounded-xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
                         <div className="p-4 border-b border-end-border flex justify-between items-center bg-end-error/10">
                             <h3 className="font-bold text-white flex items-center gap-2">
                                 <Activity size={18} className="text-end-error" />
                                 Relatório de Anomalias (IA)
                             </h3>
-                            <button onClick={() => setIsAnomalyModalOpen(false)} className="text-end-text-sec hover:text-white transition-colors">
+                            <button onClick={() => { setIsAnomalyModalOpen(false); setSelectedAnomalyIdx(null); }} className="text-end-text-sec hover:text-white transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
                         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
                             <p className="text-sm text-end-text-sec mb-4">
-                                {anomalies.length} comportamento(s) atípico(s) detectado(s) pelo nosso motor de IA nos últimos 30 dias.
+                                {anomalies.length} comportamento(s) atípico(s) detectado(s) pelo nosso motor de IA. Clique em um card para ver os detalhes.
                             </p>
                             <div className="space-y-3">
                                 {anomalies.map((anom, idx) => (
-                                    <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-lg flex gap-4 items-start">
-                                        <div className="bg-end-error/20 p-2 rounded-full shrink-0">
-                                            <AlertOctagon size={18} className="text-end-error" />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="text-white font-bold capitalize">{anom.tipo?.replace('_', ' ')}</h4>
-                                                <span className={cn(
-                                                    "text-[9px] font-black uppercase px-2 py-0.5 rounded",
-                                                    anom.severidade === 'alta' ? "bg-end-error/20 text-end-error" :
-                                                        anom.severidade === 'media' ? "bg-end-warning/20 text-end-warning" : "bg-white/10 text-white"
-                                                )}>
-                                                    Risco: {anom.severidade}
-                                                </span>
+                                    <div key={idx} className="rounded-lg border border-white/10 overflow-hidden transition-all">
+                                        {/* Card Header — Clickable */}
+                                        <div
+                                            onClick={() => setSelectedAnomalyIdx(selectedAnomalyIdx === idx ? null : idx)}
+                                            className={cn(
+                                                "p-4 flex gap-4 items-start cursor-pointer transition-colors",
+                                                selectedAnomalyIdx === idx ? "bg-end-error/10" : "bg-white/5 hover:bg-white/[0.08]"
+                                            )}
+                                        >
+                                            <div className="bg-end-error/20 p-2 rounded-full shrink-0">
+                                                <AlertOctagon size={18} className="text-end-error" />
                                             </div>
-                                            <p className="text-sm text-end-text-sec">{anom.detalhe}</p>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="text-white font-bold capitalize">{anom.tipo?.replace('_', ' ')}</h4>
+                                                    <span className={cn(
+                                                        "text-[9px] font-black uppercase px-2 py-0.5 rounded",
+                                                        anom.severidade === 'alta' ? "bg-end-error/20 text-end-error" :
+                                                            anom.severidade === 'media' ? "bg-end-warning/20 text-end-warning" : "bg-white/10 text-white"
+                                                    )}>
+                                                        Risco: {anom.severidade}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-end-text-sec">{anom.detalhe}</p>
+                                            </div>
+                                            <div className="text-end-text-sec shrink-0 mt-1">
+                                                <span className={cn("transition-transform inline-block", selectedAnomalyIdx === idx && "rotate-180")}>▼</span>
+                                            </div>
                                         </div>
+
+                                        {/* Expanded Detail Panel */}
+                                        {selectedAnomalyIdx === idx && (
+                                            <div className="border-t border-white/10 bg-black/30 p-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                {/* Nota Metadata */}
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    <div className="bg-white/5 rounded-lg p-3">
+                                                        <p className="text-[9px] text-end-text-sec uppercase tracking-widest mb-1">Nota Nº</p>
+                                                        <p className="text-sm font-bold text-white">{anom.nota_numero || 'S/N'}</p>
+                                                    </div>
+                                                    <div className="bg-white/5 rounded-lg p-3">
+                                                        <p className="text-[9px] text-end-text-sec uppercase tracking-widest mb-1">Valor</p>
+                                                        <p className="text-sm font-bold text-end-error">R$ {(anom.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                    </div>
+                                                    <div className="bg-white/5 rounded-lg p-3">
+                                                        <p className="text-[9px] text-end-text-sec uppercase tracking-widest mb-1">Média Período</p>
+                                                        <p className="text-sm font-bold text-white">R$ {(anom.media_periodo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                    </div>
+                                                    <div className="bg-white/5 rounded-lg p-3">
+                                                        <p className="text-[9px] text-end-text-sec uppercase tracking-widest mb-1">Desvio</p>
+                                                        <p className="text-sm font-bold text-end-error">{anom.razao || 0}x acima</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Emitente/Destinatário */}
+                                                {(anom.emitente_razao || anom.destinatario_razao) && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        {anom.emitente_razao && (
+                                                            <div className="bg-white/5 rounded-lg p-3">
+                                                                <p className="text-[9px] text-end-text-sec uppercase tracking-widest mb-1">Emitente</p>
+                                                                <p className="text-xs text-white font-medium">{anom.emitente_razao}</p>
+                                                                <p className="text-[10px] text-end-text-sec mt-0.5">{anom.emitente_cnpj}</p>
+                                                            </div>
+                                                        )}
+                                                        {anom.destinatario_razao && (
+                                                            <div className="bg-white/5 rounded-lg p-3">
+                                                                <p className="text-[9px] text-end-text-sec uppercase tracking-widest mb-1">Destinatário</p>
+                                                                <p className="text-xs text-white font-medium">{anom.destinatario_razao}</p>
+                                                                <p className="text-[10px] text-end-text-sec mt-0.5">{anom.destinatario_cnpj}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Problemas Identificados */}
+                                                {anom.problemas && anom.problemas.length > 0 && (
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-white uppercase tracking-widest mb-3">Problemas Identificados pela IA</p>
+                                                        <div className="space-y-2">
+                                                            {anom.problemas.map((prob: any, pIdx: number) => (
+                                                                <div key={pIdx} className="flex gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/5">
+                                                                    <div className="mt-0.5 shrink-0">
+                                                                        <AlertOctagon size={14} className={prob.impacto === 'alto' ? "text-end-error" : "text-end-warning"} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-white">{prob.titulo}</p>
+                                                                        <p className="text-[11px] text-end-text-sec mt-0.5">{prob.descricao}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Itens da Nota */}
+                                                {anom.itens && anom.itens.length > 0 && (
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-white uppercase tracking-widest mb-3">Itens da Nota ({anom.itens.length})</p>
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-[11px]">
+                                                                <thead>
+                                                                    <tr className="text-end-text-sec uppercase border-b border-white/10">
+                                                                        <th className="text-left py-2 px-2">#</th>
+                                                                        <th className="text-left py-2 px-2">NCM</th>
+                                                                        <th className="text-left py-2 px-2">CFOP</th>
+                                                                        <th className="text-left py-2 px-2">CST</th>
+                                                                        <th className="text-right py-2 px-2">Valor</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {anom.itens.map((item: any, iIdx: number) => (
+                                                                        <tr key={iIdx} className="border-b border-white/5 text-white">
+                                                                            <td className="py-1.5 px-2">{item.n_item}</td>
+                                                                            <td className="py-1.5 px-2 font-mono text-end-accent">{item.ncm}</td>
+                                                                            <td className="py-1.5 px-2">{item.cfop}</td>
+                                                                            <td className="py-1.5 px-2">{item.cst}</td>
+                                                                            <td className="py-1.5 px-2 text-right">R$ {(item.v_prod || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
                         <div className="p-4 border-t border-end-border bg-white/[0.02] flex justify-end">
                             <button
-                                onClick={() => setIsAnomalyModalOpen(false)}
+                                onClick={() => { setIsAnomalyModalOpen(false); setSelectedAnomalyIdx(null); }}
                                 className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-lg font-bold transition-colors text-sm"
                             >
                                 Fechar Relatório

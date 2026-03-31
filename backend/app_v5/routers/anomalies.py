@@ -23,10 +23,9 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
         profile_res = admin_client.table("profiles").select("tenant_id").eq("id", user_id).single().execute()
         tenant_id = profile_res.data.get("tenant_id") if profile_res.data else None
         
-        # 1. Buscar histórico dos últimos 30 dias (Base de comparação)
-        data_base = (datetime.now() - timedelta(days=30)).isoformat()
+        # 1. Buscar histórico (Base de comparação)
         res_hist = admin_client.table("notas_fiscais")\
-            .select("valor_total, numero, created_at")\
+            .select("id, valor_total, numero, created_at, emitente_cnpj, emitente_razao_social, destinatario_cnpj, destinatario_razao_social, status")\
             .eq("tenant_id", tenant_id)\
             .execute()
         
@@ -34,27 +33,70 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
         if not notas:
             return {"status": "insufficient_data", "anomalies": []}
 
-        # Lógica Simples 1: Desvio de Valor Médio
+        # Lógica 1: Desvio de Valor Médio
         valores = [float(n['valor_total'] or 0) for n in notas]
         media = sum(valores) / len(valores) if valores else 0
-        # Notas com valor > 3x a média são anomalias
         anomalias_valor = [n for n in notas if float(n['valor_total'] or 0) > media * 3]
         
         results = []
         for anom in anomalias_valor:
+            nota_id = anom.get('id')
+            valor = float(anom['valor_total'] or 0)
+            razao_multiplicacao = round(valor / media, 1) if media > 0 else 0
+            
+            # Buscar itens da nota para detalhamento
+            itens_nota = []
+            try:
+                itens_res = admin_client.table("nfe_items")\
+                    .select("n_item, ncm, cfop, cst, v_prod, descricao")\
+                    .eq("nota_fiscal_id", nota_id)\
+                    .execute()
+                itens_nota = itens_res.data or []
+            except Exception:
+                pass
+
             results.append({
                 "tipo": "valor_atípico",
-                "detalhe": f"Nota {anom.get('numero', 'S/N')} com valor {float(anom['valor_total']):,.2f} está 3x acima da média do período.",
-                "severidade": "alta"
+                "detalhe": f"Nota {anom.get('numero', 'S/N')} com valor {valor:,.2f} está {razao_multiplicacao}x acima da média do período.",
+                "severidade": "alta",
+                "nota_numero": anom.get('numero', 'S/N'),
+                "nota_id": nota_id,
+                "valor": valor,
+                "media_periodo": round(media, 2),
+                "razao": razao_multiplicacao,
+                "data_emissao": anom.get('created_at'),
+                "emitente_cnpj": anom.get('emitente_cnpj'),
+                "emitente_razao": anom.get('emitente_razao_social'),
+                "destinatario_cnpj": anom.get('destinatario_cnpj'),
+                "destinatario_razao": anom.get('destinatario_razao_social'),
+                "status_nota": anom.get('status', 'pendente'),
+                "itens": itens_nota,
+                "problemas": [
+                    {
+                        "titulo": "Valor fora da curva estatística",
+                        "descricao": f"O valor R$ {valor:,.2f} excede {razao_multiplicacao}x a média de R$ {media:,.2f} das {len(notas)} notas analisadas.",
+                        "tipo_problema": "desvio_estatistico",
+                        "impacto": "alto"
+                    },
+                    {
+                        "titulo": "Risco de duplicidade ou erro de digitação",
+                        "descricao": "Valores atípicos podem indicar nota duplicada, erro na digitação do valor, ou operação legítima que precisa ser justificada.",
+                        "tipo_problema": "alerta_preventivo",
+                        "impacto": "medio"
+                    },
+                    {
+                        "titulo": "Verificação de base de cálculo recomendada",
+                        "descricao": "Notas com valores elevados devem ter suas bases de cálculo (ICMS, PIS, COFINS) conferidas para evitar recolhimento incorreto.",
+                        "tipo_problema": "recomendacao_fiscal",
+                        "impacto": "medio"
+                    }
+                ]
             })
-
-        # Lógica Simples 2: Sequência de Notas (Gaps)
-        # (Opcional - para futuro)
 
         return {
             "status": "success",
             "total_analisado": len(notas),
-            "media_periodo": media,
+            "media_periodo": round(media, 2),
             "anomalies": results
         }
     except Exception as e:
