@@ -17,6 +17,7 @@ export function Alertas() {
         status: 'pendente'
     });
     const [selectedAlert, setSelectedAlert] = useState<any>(null);
+    const [selectedLegalInfo, setSelectedLegalInfo] = useState<any>(null);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
@@ -260,9 +261,18 @@ export function Alertas() {
                                                 const displayText = (!baseLegal || baseLegal === 'None') ? 'Legislação Vigente' : baseLegal;
                                                 return (
                                                     <div className="mt-1.5">
-                                                        <span className="text-[9px] bg-white/5 border border-white/10 text-end-text-sec px-2 py-0.5 rounded inline-flex items-center gap-1">
+                                                        <button 
+                                                            onClick={() => setSelectedLegalInfo({
+                                                                baseLegal: displayText,
+                                                                tipo: item.tipo.replace('_', ' '),
+                                                                diferenca: item.diferenca,
+                                                                esperado: item.valor_esperado,
+                                                                encontrado: item.valor_encontrado
+                                                            })}
+                                                            className="text-[9px] bg-white/5 border border-white/10 text-end-text-sec px-2 py-0.5 rounded inline-flex items-center gap-1 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                                                        >
                                                             ⚖️ Base Legal: <span className="text-white font-bold">{displayText}</span>
-                                                        </span>
+                                                        </button>
                                                     </div>
                                                 );
                                             })()}
@@ -399,6 +409,60 @@ export function Alertas() {
                                     Resolver Pendências
                                 </button>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {selectedLegalInfo && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+                    <div className="bg-end-card border border-end-border rounded-lg max-w-sm w-full p-6 shadow-2xl relative">
+                        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                            <div className="bg-white/5 p-2 rounded border border-white/10">
+                                ⚖️
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Fundamentação Legal</h3>
+                                <p className="text-[10px] text-end-text-sec uppercase font-bold">{selectedLegalInfo.tipo}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-[10px] font-bold text-end-text-sec uppercase mb-1">Legislação Aplicada</h4>
+                                <div className="bg-black/30 p-3 rounded border border-white/5">
+                                    <p className="text-sm text-white font-medium break-words leading-relaxed">
+                                        {selectedLegalInfo.baseLegal}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-black/20 p-3 rounded border border-white/5">
+                                    <span className="text-[10px] font-bold text-end-text-sec uppercase block">Encontrado na Nota</span>
+                                    <span className="text-sm text-white font-bold block mt-0.5">R$ {(selectedLegalInfo.encontrado || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="bg-black/20 p-3 rounded border border-white/5">
+                                    <span className="text-[10px] font-bold text-end-text-sec uppercase block">Auditoria (Correto)</span>
+                                    <span className="text-sm text-white font-bold block mt-0.5">R$ {(selectedLegalInfo.esperado || 0).toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-end-error/10 border border-end-error/20 p-3 rounded">
+                                <span className="text-[10px] font-bold text-end-error tracking-widest uppercase block mb-1">Exposição / Impacto Total</span>
+                                <span className="text-2xl font-black text-end-error">
+                                    R$ {(selectedLegalInfo.diferenca || 0).toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <button
+                                onClick={() => setSelectedLegalInfo(null)}
+                                className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white text-sm font-bold uppercase tracking-wider rounded transition-colors"
+                            >
+                                Voltar ao Relatório
+                            </button>
                         </div>
                     </div>
                 </div>
