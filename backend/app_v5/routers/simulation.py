@@ -187,7 +187,9 @@ async def auto_fill_taxes(request: NFeMockRequest, user: dict = Depends(get_curr
         for r in result.get("items_results", []):
             items_taxes.append({
                 "n_item": r.get("n_item"),
-                "tax_values": r.get("tax_values", {})
+                "tax_values": r.get("tax_values", {}),
+                "suggested_cfop": r.get("suggested_cfop"),
+                "suggested_cst": r.get("suggested_cst")
             })
             
         return {"items_taxes": items_taxes}

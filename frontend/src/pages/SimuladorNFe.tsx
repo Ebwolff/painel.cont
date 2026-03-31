@@ -138,9 +138,12 @@ export function SimuladorNFe() {
             const itemsTaxes = response.data?.items_taxes || response.items_taxes;
 
             const newItens = itens.map((item) => {
-                const taxes = itemsTaxes?.find((t: any) => t.n_item === item.n_item)?.tax_values || {};
+                const tObj = itemsTaxes?.find((t: any) => t.n_item === item.n_item) || {};
+                const taxes = tObj.tax_values || {};
                 return {
                     ...item,
+                    cfop: tObj.suggested_cfop || item.cfop,
+                    cst: tObj.suggested_cst || item.cst,
                     v_icms: taxes.icms || 0,
                     v_ipi: taxes.ipi || 0,
                     v_pis: taxes.pis || 0,

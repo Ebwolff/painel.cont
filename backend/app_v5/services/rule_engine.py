@@ -150,6 +150,9 @@ class RuleEngineService:
         results_flags = {tax: True for tax in tax_map.keys()}
         tax_values = {tax: 0.0 for tax in tax_map.keys()}
         tax_bases = {f"vbc_{tax}": 0.0 for tax in tax_map.keys()}
+        
+        suggested_cst = cst
+        suggested_cfop = cfop
 
         for rule in rules:
             rule_type = rule.get("rule_type")
@@ -158,6 +161,17 @@ class RuleEngineService:
 
             field_name = tax_map[rule_type]
             expected_rate = float(rule.get("expected_rate", 0))
+            
+            # Extract suggested CST/CFOP from ICMS or PIS rules
+            if rule_type == 'icms' or not suggested_cst:
+                rule_cst = rule.get("expected_cst")
+                if rule_cst:
+                    suggested_cst = str(rule_cst).zfill(2) if len(str(rule_cst)) < 2 else str(rule_cst)
+                    
+            if rule_type == 'icms' or not suggested_cfop:
+                rule_cfop = rule.get("expected_cfop")
+                if rule_cfop:
+                    suggested_cfop = str(rule_cfop)
             
             # Identificação da Base de Cálculo
             expected_base = v_prod
@@ -207,6 +221,8 @@ class RuleEngineService:
             "ncm": ncm,
             "cfop": cfop,
             "cst": cst,
+            "suggested_cfop": suggested_cfop,
+            "suggested_cst": suggested_cst,
             "validation_results": results_flags,
             "tax_values": full_tax_info,
             "alertas": alertas
