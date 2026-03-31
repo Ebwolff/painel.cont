@@ -25,7 +25,7 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
         
         # 1. Buscar histórico (Base de comparação)
         res_hist = admin_client.table("notas_fiscais")\
-            .select("id, valor_total, numero, created_at, emitente_cnpj, emitente_razao_social, destinatario_cnpj, destinatario_razao_social, status")\
+            .select("id, valor_total, numero, created_at, emitente_cnpj, emitente_nome, destinatario_cnpj, destinatario_nome, status")\
             .eq("tenant_id", tenant_id)\
             .execute()
         
@@ -66,9 +66,9 @@ def detect_anomalies(user: dict = Depends(get_current_user)):
                 "razao": razao_multiplicacao,
                 "data_emissao": anom.get('created_at'),
                 "emitente_cnpj": anom.get('emitente_cnpj'),
-                "emitente_razao": anom.get('emitente_razao_social'),
+                "emitente_razao": anom.get('emitente_nome'),
                 "destinatario_cnpj": anom.get('destinatario_cnpj'),
-                "destinatario_razao": anom.get('destinatario_razao_social'),
+                "destinatario_razao": anom.get('destinatario_nome'),
                 "status_nota": anom.get('status', 'pendente'),
                 "itens": itens_nota,
                 "problemas": [
