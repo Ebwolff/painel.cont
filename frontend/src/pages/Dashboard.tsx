@@ -211,6 +211,33 @@ export function Dashboard() {
                 </div>
             )}
 
+            {/* Empty State — quando não há dados fiscais */}
+            {stats.total_notas === 0 && stats.valor_bens_servicos === 0 && (
+                <div className="bg-end-card border border-dashed border-end-accent/30 rounded-xl p-8 text-center animate-in fade-in duration-500">
+                    <div className="mx-auto w-16 h-16 bg-end-accent/10 rounded-full flex items-center justify-center mb-4">
+                        <FileText size={32} className="text-end-accent" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Nenhuma nota fiscal processada</h3>
+                    <p className="text-sm text-end-text-sec max-w-md mx-auto mb-6">
+                        O painel será populado automaticamente quando notas forem sincronizadas via SEFAZ ou enviadas por upload manual de XML.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            onClick={() => navigate('/empresas')}
+                            className="bg-end-accent text-black px-6 py-2.5 rounded-lg font-black text-xs hover:scale-105 transition-transform"
+                        >
+                            CADASTRAR EMPRESA + CERTIFICADO
+                        </button>
+                        <button
+                            onClick={() => navigate('/upload')}
+                            className="bg-white/10 text-white px-6 py-2.5 rounded-lg font-bold text-xs hover:bg-white/20 transition-colors"
+                        >
+                            UPLOAD MANUAL XML
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-end-card border border-end-border p-5 rounded-lg border-l-4 border-l-blue-500 shadow-lg shadow-blue-500/5">

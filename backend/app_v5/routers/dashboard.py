@@ -54,10 +54,6 @@ def get_dashboard_metrics(response: Response, user: dict = Depends(get_current_u
         from datetime import datetime, timedelta
         data_limite = (datetime.now() - timedelta(days=30)).isoformat()
 
-        # Preparar Query Base (Últimos 30 dias)
-        from datetime import datetime, timedelta
-        data_limite = (datetime.now() - timedelta(days=30)).isoformat()
-
         # Usamos service_client com filtro manual para garantir bypass de RLS instável
         # mantendo a segurança via filtro de tenant_id validado.
         admin_client = supabase_service.get_service_client()

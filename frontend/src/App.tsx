@@ -1,26 +1,31 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AdminLayout } from './layouts/AdminLayout';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
 
-import { Dashboard } from './pages/Dashboard';
-import { Upload } from './pages/Upload';
-import { Alertas } from './pages/Alertas';
-import { Empresas } from './pages/Empresas';
-import { Login } from './pages/Login';
-import { RelatorioValor } from './pages/RelatorioValor';
-import { SimuladorNFe } from './pages/SimuladorNFe';
-import { Pricing } from './pages/Pricing';
+// Lazy-loaded pages (code-splitting per route)
+const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const Upload = React.lazy(() => import('./pages/Upload').then(m => ({ default: m.Upload })));
+const Alertas = React.lazy(() => import('./pages/Alertas').then(m => ({ default: m.Alertas })));
+const Empresas = React.lazy(() => import('./pages/Empresas').then(m => ({ default: m.Empresas })));
+const Login = React.lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const RelatorioValor = React.lazy(() => import('./pages/RelatorioValor').then(m => ({ default: m.RelatorioValor })));
+const SimuladorNFe = React.lazy(() => import('./pages/SimuladorNFe').then(m => ({ default: m.SimuladorNFe })));
+const Pricing = React.lazy(() => import('./pages/Pricing').then(m => ({ default: m.Pricing })));
+const Users = React.lazy(() => import('./pages/Users').then(m => ({ default: m.Users })));
+const MonitorFiscal = React.lazy(() => import('./pages/MonitorFiscal').then(m => ({ default: m.MonitorFiscal })));
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const TenantsList = React.lazy(() => import('./pages/admin/TenantsList').then(m => ({ default: m.TenantsList })));
+const UsersList = React.lazy(() => import('./pages/admin/UsersList').then(m => ({ default: m.UsersList })));
+const RegrasFiscais = React.lazy(() => import('./pages/admin/RegrasFiscais').then(m => ({ default: m.RegrasFiscais })));
+const ClientDashboard = React.lazy(() => import('./pages/client/ClientDashboard').then(m => ({ default: m.ClientDashboard })));
 
-import { TenantsList } from './pages/admin/TenantsList';
-import { UsersList } from './pages/admin/UsersList';
-import { RegrasFiscais } from './pages/admin/RegrasFiscais';
-import { Users } from './pages/Users';
-import { ClientDashboard } from './pages/client/ClientDashboard';
-
-import { MonitorFiscal } from './pages/MonitorFiscal';
+const PageLoader = () => (
+    <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-end-accent border-t-transparent rounded-full" />
+    </div>
+);
 
 // Protected Route Component
 function RequireAuth({ children, requireAdmin = false, requireSuperAdmin = false }: { children: JSX.Element, requireAdmin?: boolean, requireSuperAdmin?: boolean }) {
@@ -59,6 +64,7 @@ function App() {
     return (
         <AuthProvider>
             <Router>
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                     <Route path="/login" element={<Login />} />
 
@@ -100,6 +106,7 @@ function App() {
 
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+                </Suspense>
             </Router>
         </AuthProvider>
     );

@@ -29,9 +29,9 @@ export function Layout() {
         { icon: Building2, label: 'Empresas', path: '/empresas', feature: 'basic_monitor' },
     ];
 
-    const navItems = allNavItems;
+    const navItems = [...allNavItems];
 
-    if (isAdmin) {
+    if (isAdmin && !navItems.some(i => i.path === '/users')) {
         navItems.push({ icon: User, label: 'Equipe', path: '/users', feature: null });
     }
 

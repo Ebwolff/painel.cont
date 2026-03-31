@@ -1,5 +1,4 @@
-from fastapi import FastAPI
-# Deploy: 2026-03-03 10:15 - Mixed Content & Timezone Fix
+from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -15,8 +14,8 @@ if sentry_dsn:
     sentry_sdk.init(
         dsn=sentry_dsn,
         integrations=[FastApiIntegration()],
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
     )
     logger.info("SENTRY: Inicializado com sucesso.")
 
@@ -39,8 +38,15 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Cron Secret Guard
+CRON_SECRET = os.getenv("CRON_SECRET", "default-cron-secret-change-me")
+
+async def verify_cron_secret(x_cron_secret: str = Header(None)):
+    if x_cron_secret != CRON_SECRET:
+        raise HTTPException(status_code=403, detail="Cron secret inválido.")
+
 # Cron Sync Endpoint (Triggered by External Cron)
-@app.get("/api/cron/sync-tax-rates")
+@app.get("/api/cron/sync-tax-rates", dependencies=[Depends(verify_cron_secret)])
 async def cron_tax_sync():
     """Trigger manual da sincronização fiscal via Cron extern."""
     logger.info("CRON: Iniciando atualização automática via endpoint...")
@@ -53,7 +59,7 @@ async def cron_tax_sync():
         logger.error(f"CRON: Falha na sincronização: {e}")
         return {"status": "error", "message": str(e)}
 
-@app.get("/api/cron/sefaz-sync-all")
+@app.get("/api/cron/sefaz-sync-all", dependencies=[Depends(verify_cron_secret)])
 async def cron_sefaz_sync_all():
     """Trigger automático para sincronizar todas as empresas com certificado ativo."""
     logger.info("CRON_SEFAZ: Iniciando sincronização global das empresas...")
@@ -151,8 +157,10 @@ async def health_check():
     }
 
 @app.get("/api/debug-env")
-async def debug_env():
-    """Rota segura para verificar se as chaves estão presentes na Vercel e testar o banco."""
+async def debug_env(x_cron_secret: str = Header(None)):
+    """Rota protegida para verificar se as chaves estão presentes e testar o banco."""
+    if x_cron_secret != CRON_SECRET:
+        raise HTTPException(status_code=403, detail="Acesso negado.")
     from app_v5.core.supabase_client import SupabaseService
     
     keys_to_check = [
