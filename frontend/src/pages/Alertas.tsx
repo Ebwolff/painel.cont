@@ -253,7 +253,19 @@ export function Alertas() {
                                                 </div>
                                                 <span className="text-[10px] font-bold text-end-text-sec">{new Date(item.created_at).toLocaleDateString('pt-BR')}</span>
                                             </div>
-                                            <p className="text-sm text-white">{item.mensagem}</p>
+                                            <p className="text-sm text-white">{(item.mensagem || '').replace(/\s*\[Base Legal:.*?\]/g, '')}</p>
+                                            {/* Base Legal Badge */}
+                                            {(() => {
+                                                const baseLegal = item.base_legal || (item.mensagem?.match(/\[Base Legal:\s*(.*?)\]/)?.[1]);
+                                                const displayText = (!baseLegal || baseLegal === 'None') ? 'Legislação Vigente' : baseLegal;
+                                                return (
+                                                    <div className="mt-1.5">
+                                                        <span className="text-[9px] bg-white/5 border border-white/10 text-end-text-sec px-2 py-0.5 rounded inline-flex items-center gap-1">
+                                                            ⚖️ Base Legal: <span className="text-white font-bold">{displayText}</span>
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })()}
                                             <div className="mt-2 flex gap-4">
                                                 <div className="text-[10px]">
                                                     <span className="text-end-text-sec block">Esperado</span>

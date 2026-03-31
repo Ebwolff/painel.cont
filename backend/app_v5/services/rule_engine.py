@@ -193,7 +193,8 @@ class RuleEngineService:
             if diff > tolerance:
                 # Determina se foi um match hierárquico (fallback)
                 is_fallback = rule.get("parameters", {}).get("fallback") or (rule.get("ncm") and len(rule.get("ncm", "")) < 8)
-                msg_suffix = f" [Base Legal: {rule.get('legal_foundation', 'Legislação Vigente')}]"
+                legal_text = rule.get('legal_foundation') or 'Legislação Vigente'
+                msg_suffix = f" [Base Legal: {legal_text}]"
                 if is_fallback:
                     msg_suffix = f" (Validado por Categoria NCM: {rule.get('ncm')}){msg_suffix}"
 

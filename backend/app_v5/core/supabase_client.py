@@ -181,7 +181,8 @@ class SupabaseService:
                     "mensagem": alerta["mensagem"],
                     "valor_esperado": alerta["valor_esperado"],
                     "valor_encontrado": alerta["valor_encontrado"],
-                    "diferenca": alerta["diferenca"]
+                    "diferenca": alerta["diferenca"],
+                    "base_legal": alerta.get("legal_foundation")
                 })
             
             client.table("alertas_conformidade").insert(alertas_payload).execute()
